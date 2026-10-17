@@ -1,0 +1,10 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'tests/*'
+# Native build steps are only allowed for these packages.
+allowBuilds:
+  esbuild: true
+  '@swc/core': true
+  # Optional native accelerator of msgpackr (BullMQ); the pure JS fallback is used.
+  msgpackr-extract: false

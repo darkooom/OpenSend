@@ -1,0 +1,6 @@
+{
+  "extends": "@opensend/config/tsconfig/nest.json",
+  "compilerOptions": { "outDir": "dist", "rootDir": "src", "declaration": true },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}

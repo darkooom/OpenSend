@@ -1,0 +1,24 @@
+{
+  "name": "@opensend/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Small TypeScript client for the OpenSend public API (server-side only).",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@opensend/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@opensend/config": "workspace:*",
+    "vitest": "5.0.5"
+  }
+}

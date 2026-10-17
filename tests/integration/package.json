@@ -1,0 +1,28 @@
+{
+  "name": "@opensend/integration-tests",
+  "version": "0.1.0",
+  "private": true,
+  "description": "System integration tests against real PostgreSQL, Redis and (optionally) Mailpit.",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@opensend/api": "workspace:*",
+    "@opensend/config": "workspace:*",
+    "@opensend/contracts": "workspace:*",
+    "@opensend/core": "workspace:*",
+    "@opensend/db": "workspace:*",
+    "@opensend/providers": "workspace:*",
+    "@opensend/sdk": "workspace:*",
+    "@opensend/worker": "workspace:*",
+    "@types/supertest": "7.2.1",
+    "bullmq": "6.3.15",
+    "ioredis": "5.11.1",
+    "pg": "8.23.1",
+    "supertest": "7.3.1",
+    "vitest": "5.0.5",
+    "@types/pg": "8.23.1"
+  }
+}

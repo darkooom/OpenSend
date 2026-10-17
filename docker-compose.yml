@@ -1,0 +1,128 @@
+# OpenSend local stack.
+#   Infrastructure only:   docker compose up -d --wait postgres redis minio mailpit
+#   Full stack (images):   docker compose --profile app up -d --build
+name: opensend
+
+services:
+  postgres:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_USER: opensend
+      POSTGRES_PASSWORD: opensend
+      POSTGRES_DB: opensend
+    ports: ['127.0.0.1:${OPENSEND_PG_PORT:-54329}:5432']
+    volumes: [postgres-data:/var/lib/postgresql]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U opensend -d opensend']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:8.8.3-alpine
+    # AOF keeps queued jobs across restarts; PostgreSQL stays the durable source of truth regardless.
+    command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
+    ports: ['127.0.0.1:${OPENSEND_REDIS_PORT:-56379}:6379']
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    # RELEASE.2025-09-07T16-13-09Z, pinned by digest (MinIO no longer publishes newer community images).
+    image: quay.io/minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    command: ['server', '/data', '--console-address', ':9001']
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-opensend-local}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-opensend-local-secret}
+    ports:
+      [
+        '127.0.0.1:${OPENSEND_MINIO_PORT:-59000}:9000',
+        '127.0.0.1:${OPENSEND_MINIO_CONSOLE_PORT:-59001}:9001',
+      ]
+    volumes: [minio-data:/data]
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:9000/minio/health/live']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:v1.31.6
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: '1'
+      MP_SMTP_AUTH_ALLOW_INSECURE: '1'
+      MP_MAX_MESSAGES: '5000'
+    ports:
+      [
+        '127.0.0.1:${OPENSEND_MAILPIT_SMTP_PORT:-51025}:1025',
+        '127.0.0.1:${OPENSEND_MAILPIT_UI_PORT:-58025}:8025',
+      ]
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    profiles: ['app']
+    build: { context: ., dockerfile: docker/Dockerfile, target: api }
+    command: ['node', 'packages/db/dist/migrate.js']
+    env_file: [.env]
+    environment: &containerEnv
+      DATABASE_URL: postgres://opensend:opensend@postgres:5432/opensend
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT: http://minio:9000
+      MAILPIT_SMTP_HOST: mailpit
+      MAILPIT_SMTP_PORT: '1025'
+      MAILPIT_API_URL: http://mailpit:8025
+      OPENSEND_PRIVATE_NETWORK_ALLOWLIST: mailpit
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    profiles: ['app']
+    build: { context: ., dockerfile: docker/Dockerfile, target: api }
+    env_file: [.env]
+    environment: *containerEnv
+    ports: ['127.0.0.1:3001:3001']
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+      minio: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3001/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  worker:
+    profiles: ['app']
+    build: { context: ., dockerfile: docker/Dockerfile, target: worker }
+    env_file: [.env]
+    environment: *containerEnv
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+  web:
+    profiles: ['app']
+    build: { context: ., dockerfile: docker/Dockerfile, target: web }
+    environment:
+      OPENSEND_API_INTERNAL_URL: http://api:3001
+    ports: ['127.0.0.1:3000:3000']
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:

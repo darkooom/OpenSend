@@ -1,0 +1,10 @@
+pnpm-lock.yaml
+packages/db/drizzle/
+**/.next/
+**/dist/
+.turbo/
+.claude/
+apps/web/next-env.d.ts
+**/fixtures/*.pem
+test-results/
+playwright-report/

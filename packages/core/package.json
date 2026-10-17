@@ -1,0 +1,33 @@
+{
+  "name": "@opensend/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Domain logic shared by the OpenSend API and worker (no HTTP, no UI).",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.1152.0",
+    "@aws-sdk/s3-request-presigner": "3.1152.0",
+    "@opensend/config": "workspace:*",
+    "@opensend/contracts": "workspace:*",
+    "@opensend/db": "workspace:*",
+    "ipaddr.js": "2.5.0",
+    "mustache": "4.2.0",
+    "pino": "10.4.0",
+    "undici": "8.12.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/mustache": "4.2.6",
+    "vitest": "5.0.5"
+  }
+}

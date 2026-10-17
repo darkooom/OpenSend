@@ -1,0 +1,29 @@
+{
+  "name": "@opensend/providers",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pluggable sending providers (local Mailpit, generic SMTP, Amazon SES) with explicit capabilities.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sesv2": "3.1152.0",
+    "@opensend/contracts": "workspace:*",
+    "@opensend/core": "workspace:*",
+    "nodemailer": "10.1.2",
+    "undici": "8.12.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@opensend/config": "workspace:*",
+    "vitest": "5.0.5"
+  }
+}
