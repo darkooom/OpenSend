@@ -185,12 +185,15 @@ export default function TemplateEditor() {
           <fieldset className="grid gap-2">
             <legend className="mb-1 font-medium">Variables</legend>
             {draft.variables.map((v, i) => (
-              <div key={i} className="flex flex-wrap items-center gap-2">
+              <div
+                key={i}
+                className="grid grid-cols-[minmax(0,1.2fr)_auto_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2"
+              >
                 <Input
                   aria-label="Variable name"
                   value={v.name}
                   onChange={(e) => setVar(i, { name: e.target.value })}
-                  className="w-40 font-mono"
+                  className="font-mono"
                 />
                 <label className="flex items-center gap-1">
                   <input
@@ -205,14 +208,12 @@ export default function TemplateEditor() {
                   placeholder="sample (preview)"
                   value={v.sample ?? ''}
                   onChange={(e) => setVar(i, { sample: e.target.value || undefined })}
-                  className="w-40"
                 />
                 <Input
                   aria-label="Fallback value"
                   placeholder="fallback"
                   value={v.fallback ?? ''}
                   onChange={(e) => setVar(i, { fallback: e.target.value || undefined })}
-                  className="w-32"
                 />
                 <Button
                   type="button"

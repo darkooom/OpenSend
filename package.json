@@ -1,7 +1,7 @@
 {
   "name": "opensend",
   "private": true,
-  "description": "OpenSend – developer-focused transactional email platform (working name).",
+  "description": "OpenSend \u2013 developer-focused transactional email platform (working name).",
   "packageManager": "pnpm@11.15.1",
   "engines": {
     "node": ">=24.0.0"
@@ -20,7 +20,8 @@
     "setup:local": "node scripts/setup-local.mjs",
     "bootstrap:token": "pnpm --filter @opensend/api cli bootstrap-token",
     "services:up": "docker compose up -d --wait postgres redis minio mailpit",
-    "services:down": "docker compose down"
+    "services:down": "docker compose down",
+    "readme:screenshots": "playwright test -c playwright.readme.config.ts && node scripts/readme/build-images.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

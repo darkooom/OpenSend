@@ -253,7 +253,7 @@ export default function OverviewPage() {
             </div>
           </Section>
           <Section title="Pending work">
-            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border bg-border md:grid-cols-5">
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border bg-border md:grid-cols-5 [&>*:last-child:nth-child(odd)]:col-span-2 md:[&>*:last-child:nth-child(odd)]:col-span-1">
               <Stat
                 label="Pending"
                 value={o.pending}

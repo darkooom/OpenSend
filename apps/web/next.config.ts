@@ -23,6 +23,7 @@ const config: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: path.join(__dirname, '../..'),
   poweredByHeader: false,
+  devIndicators: false,
   transpilePackages: ['@opensend/contracts'],
   async rewrites() {
     // Same-origin proxy: session cookies stay first-party and CSRF checks see our origin.

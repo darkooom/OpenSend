@@ -14,7 +14,7 @@ try {
 } catch {
   /* no .env: defaults below */
 }
-const DB = 'opensend_e2e';
+const DB = process.env.E2E_DB_NAME ?? 'opensend_e2e';
 const admin =
   process.env.E2E_ADMIN_DATABASE_URL ?? 'postgres://opensend:opensend@localhost:54329/postgres';
 const dbUrl = admin.replace(/\/[^/]*$/, `/${DB}`);
@@ -40,6 +40,8 @@ const env = {
   MAILPIT_SMTP_HOST: process.env.MAILPIT_SMTP_HOST ?? '127.0.0.1',
   MAILPIT_SMTP_PORT: process.env.MAILPIT_SMTP_PORT ?? '51025',
   MAILPIT_API_URL: process.env.MAILPIT_API_URL ?? 'http://localhost:58025',
+  OPENSEND_PRIVATE_NETWORK_ALLOWLIST: process.env.E2E_PRIVATE_NETWORK_ALLOWLIST ?? '',
+  OPENSEND_WEBHOOK_ALLOW_HTTP: process.env.E2E_WEBHOOK_ALLOW_HTTP ?? 'false',
 };
 
 const c = new pg.Client({ connectionString: admin });
