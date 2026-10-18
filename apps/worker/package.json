@@ -19,7 +19,7 @@
     "@opensend/db": "workspace:*",
     "@opensend/providers": "workspace:*",
     "bullmq": "6.3.15",
-    "ioredis": "5.11.1"
+    "ioredis": "6.0.0"
   },
   "devDependencies": {
     "vitest": "5.0.5"
