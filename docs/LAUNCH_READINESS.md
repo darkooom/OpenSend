@@ -62,7 +62,7 @@ verification.
 | Security review                                 | pass after remediation | repository-wide Codex Security review; 3 high and 4 medium scan-start findings fixed and regression-tested         |
 | Secret scan                                     | pass with fixtures     | Gitleaks found only two documented self-signed SNS fixture keys in history and no additional prepared-tree finding |
 | README media                                    | pass                   | local, repository-owned WebP assets; reproducible screenshot script present                                        |
-| Social preview asset                            | prepared               | [`social-preview.png`](social-preview.png), 1280×640, derived from the real product hero                           |
+| Social preview asset                            | published              | [`social-preview.png`](social-preview.png), 1280×640, derived from the real product hero                           |
 
 The canonical security report is stored outside the repository at:
 
@@ -134,8 +134,7 @@ The canonical security report is stored outside the repository at:
 
 ## Remaining manual actions
 
-- Upload the prepared social preview and enable private vulnerability reporting if GitHub exposes
-  it for the repository.
+- Monitor Dependabot, private vulnerability reports, and beta feedback after publication.
 - Complete the real SES, authenticated SMTP, load, and restore drills before claiming broader
   production readiness.
 
