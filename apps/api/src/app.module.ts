@@ -19,6 +19,7 @@ import { OpenApiController } from './openapi/openapi.controller';
 import { OrgsController } from './orgs/orgs.controller';
 import { OrgsService } from './orgs/orgs.service';
 import { DashboardController } from './projects/dashboard.controller';
+import { DeletionService } from './projects/deletion.service';
 import { ProjectsService } from './projects/projects.service';
 import { PublicController } from './public/public.controller';
 import { SetupController } from './setup/setup.controller';
@@ -61,6 +62,7 @@ export function setSnsCertFetcher(f: CertFetcher | null): void {
     SetupService,
     OrgsService,
     ProjectsService,
+    DeletionService,
     ApiKeysService,
     ConnectionsService,
     DomainsService,

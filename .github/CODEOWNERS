@@ -1,0 +1,10 @@
+* @darkooom
+
+/.github/ @darkooom
+/apps/api/ @darkooom
+/apps/worker/ @darkooom
+/packages/core/ @darkooom
+/packages/db/ @darkooom
+/packages/providers/ @darkooom
+/docker/ @darkooom
+

@@ -1,6 +1,7 @@
 {
   "name": "opensend",
   "private": true,
+  "license": "AGPL-3.0-only",
   "description": "OpenSend \u2013 developer-focused transactional email platform (working name).",
   "packageManager": "pnpm@11.15.1",
   "engines": {

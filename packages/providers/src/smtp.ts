@@ -136,6 +136,8 @@ export interface SmtpAdapterOptions {
   policy: TargetPolicy;
   /** Only for tests: skip address resolution. */
   resolve?: (host: string) => Promise<string>;
+  /** Additional trusted CA (PEM) for relays with a private PKI. Certificates are always verified. */
+  tlsCa?: string;
 }
 
 /** Shared SMTP implementation used by the generic relay and the local Mailpit provider. */
@@ -161,7 +163,12 @@ abstract class BaseSmtpAdapter implements ProviderAdapter {
       secure,
       requireTLS: this.target.security === 'starttls',
       ignoreTLS: this.target.security === 'none',
-      tls: { servername: this.target.host, minVersion: 'TLSv1.2', rejectUnauthorized: true },
+      tls: {
+        servername: this.target.host,
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: true,
+        ...(this.opts.tlsCa ? { ca: this.opts.tlsCa } : {}),
+      },
       auth: this.target.username
         ? { user: this.target.username, pass: this.target.password ?? '' }
         : undefined,

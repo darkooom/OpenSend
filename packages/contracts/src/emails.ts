@@ -134,7 +134,7 @@ export const templateRefSchema = z.object({
   /** Published version; defaults to the latest published version. */
   version: z.number().int().positive().optional(),
   variables: z
-    .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+    .record(z.string(), z.union([z.string().max(10_000), z.number(), z.boolean(), z.null()]))
     .default({}),
 });
 

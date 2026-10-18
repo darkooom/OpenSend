@@ -48,8 +48,8 @@ describe('suppressions', () => {
     await drain(h);
     expect(h.provider.submitted).toHaveLength(1);
     expect(h.provider.submitted[0]!.to).toEqual(['ok@example.test']);
-    // Suppressed recipients do not consume quota.
-    expect((await usage()).acceptedRecipients).toBe(1);
+    // All accepted recipients consume quota because every accepted request creates durable data.
+    expect((await usage()).acceptedRecipients).toBe(3);
   });
 
   it('suppressions added after acceptance are enforced before hand-off', async () => {

@@ -327,6 +327,8 @@ export const domains = pgTable(
     ownershipVerifiedAt: ts(),
     ownershipCheckedAt: ts(),
     ownershipLastError: text(),
+    /** Set by the periodic re-check when the TXT record disappeared; ownership is revoked after a grace period. */
+    ownershipMissingSince: ts(),
     providerConnectionId: uuid().references(() => providerConnections.id, { onDelete: 'set null' }),
     providerStatus: text({
       enum: ['not_started', 'pending', 'verified', 'failed', 'not_required', 'unsupported'],

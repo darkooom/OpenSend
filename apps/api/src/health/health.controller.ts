@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import { Controller, Get, Headers, Inject, Res } from '@nestjs/common';
 import type { AppConfig } from '@opensend/config';
 import type { ObjectStore } from '@opensend/core';
@@ -45,18 +46,23 @@ export class HealthController {
       check(() => this.redis.ping()),
       check(() => this.store.ping()),
     ]);
-    // The API can durably accept email without Redis (outbox in PostgreSQL); attachments need storage.
-    const ready = postgres === 'ok' && objectStorage === 'ok';
+    // Public writes fail closed without Redis because it carries the abuse-control budget.
+    const ready = postgres === 'ok' && redis === 'ok' && objectStorage === 'ok';
     res.status(ready ? 200 : 503);
     return { status: ready ? 'ready' : 'not_ready', checks: { postgres, redis, objectStorage } };
   }
 
-  /** Prometheus metrics. Protected by OPENSEND_METRICS_TOKEN when set. */
+  /** Prometheus metrics. OPENSEND_METRICS_TOKEN is mandatory in production. */
   @Get('metrics')
   async metrics(@Headers('authorization') auth: string | undefined, @Res() res: Response) {
     const token = this.config.OPENSEND_METRICS_TOKEN;
-    if (token && auth !== `Bearer ${token}`)
-      throw new ApiError('unauthorized', 'metrics token required');
+    if (token) {
+      const expected = Buffer.from(`Bearer ${token}`);
+      const supplied = Buffer.from(auth ?? '');
+      if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) {
+        throw new ApiError('unauthorized', 'metrics token required');
+      }
+    }
     const status = await this.db.execute<{ status: string; n: number }>(
       sql`SELECT status, count(*)::int AS n FROM emails GROUP BY status`,
     );

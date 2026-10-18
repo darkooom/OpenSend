@@ -7,7 +7,13 @@ export type {
 } from '@opensend/contracts';
 
 export interface Me {
-  user: { id: string; email: string; name: string; platformRole: 'admin' | null };
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    platformRole: 'admin' | null;
+    emailVerified: boolean;
+  };
   memberships: Array<{
     organization: { id: string; name: string; slug: string };
     role: string;

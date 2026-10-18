@@ -1,14 +1,20 @@
-import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Post } from '@nestjs/common';
 import { ClientIp } from '../auth/guards';
+import { PLATFORM_MAILER } from '../infra/tokens';
+import type { PlatformMailer } from '../mail/platform-mailer';
 import { SetupService } from './setup.service';
 
 @Controller('api/setup')
 export class SetupController {
-  constructor(private readonly setup: SetupService) {}
+  constructor(
+    private readonly setup: SetupService,
+    @Inject(PLATFORM_MAILER) private readonly mailer: PlatformMailer,
+  ) {}
 
   @Get('status')
   async status() {
-    return { needsSetup: await this.setup.needsSetup() };
+    // `accountEmails` tells the dashboard whether password reset / verification can be offered.
+    return { needsSetup: await this.setup.needsSetup(), accountEmails: this.mailer.enabled };
   }
 
   @Post()

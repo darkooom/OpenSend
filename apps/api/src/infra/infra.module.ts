@@ -1,6 +1,12 @@
 import { Global, Inject, Module, type OnApplicationShutdown } from '@nestjs/common';
 import { type AppConfig } from '@opensend/config';
-import { KeyRing, S3ObjectStore, createLogger, type ObjectStore } from '@opensend/core';
+import {
+  KeyRing,
+  S3ObjectStore,
+  createLogger,
+  type Logger,
+  type ObjectStore,
+} from '@opensend/core';
 import { createDb, type DbHandle } from '@opensend/db';
 import {
   createProviderAdapter,
@@ -17,9 +23,11 @@ import {
   KEYRING,
   LOGGER,
   OBJECT_STORE,
+  PLATFORM_MAILER,
   PROVIDER_FACTORY,
   REDIS,
 } from './tokens';
+import { PlatformMailer } from '../mail/platform-mailer';
 
 export type ProviderFactory = (spec: ConnectionSpec) => ProviderAdapter;
 
@@ -91,6 +99,11 @@ function required(): InfraOverrides {
       useFactory: (c: AppConfig) => createLogger({ name: 'opensend-api', level: c.LOG_LEVEL }),
       inject: [CONFIG],
     },
+    {
+      provide: PLATFORM_MAILER,
+      useFactory: (c: AppConfig, l: Logger) => new PlatformMailer(c, l),
+      inject: [CONFIG, LOGGER],
+    },
     { provide: DNS_RESOLVER, useFactory: () => required().dnsResolver ?? systemDnsResolver },
     {
       provide: PROVIDER_FACTORY,
@@ -120,6 +133,7 @@ function required(): InfraOverrides {
     LOGGER,
     DNS_RESOLVER,
     PROVIDER_FACTORY,
+    PLATFORM_MAILER,
   ],
 })
 export class InfraModule implements OnApplicationShutdown {

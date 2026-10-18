@@ -1,18 +1,27 @@
 # Implementation status
 
-Snapshot: 2026-10-17. "Verified" means covered by automated tests that were executed and
-passed locally (see [TESTING.md](TESTING.md)); CI is configured but has not run on GitHub yet
-(nothing has been pushed).
+Snapshot: 2026-10-18. "Verified" means covered by automated tests that were executed and
+passed locally (see [TESTING.md](TESTING.md)). The launch-readiness worktree passes format, build,
+lint, typecheck, all workspace tests (including 85 integration cases), and the fresh-install
+Playwright flow. The previous GitHub CI run failed only while pulling the retired anonymous Quay
+MinIO image; the replacement image is digest-pinned and health-checked locally. A new GitHub run
+is still required before merge.
+
+## Licensing
+
+Platform: `AGPL-3.0-only` ([LICENSE](../LICENSE)). `@opensend/sdk` and `@opensend/contracts`:
+MIT. These files are a candidate working-tree decision until the owner explicitly confirms it;
+see [LICENSING_DECISION.md](LICENSING_DECISION.md). Still open: contribution terms (DCO or a CLA,
+which is needed if dual licensing is ever planned).
 
 ## Release blockers
 
-1. **No license.** The repository contains no license, so nobody may use or redistribute it.
-   The owner has to choose one (e.g. AGPL-3.0 vs. Apache-2.0/MIT has direct consequences for
-   the planned managed service). Not decided on purpose.
-2. **Amazon SES not verified against a real account.** Adapter, DKIM handling and SNS
+1. **Amazon SES not verified against a real account.** Adapter, DKIM handling and SNS
    verification are tested with test doubles only.
-3. **No security review / penetration test** by a third party.
-4. **No dashboard password reset or email verification** (needs a platform sender).
+2. **No independent third-party penetration test.** A repository-wide Codex Security review was
+   completed and its seven scan-start findings were remediated and regression-tested.
+3. **License choice not explicitly confirmed for merge.** The working tree contains the
+   recommended AGPL server / MIT SDK split, but the owner decision is still required.
 
 ## Implemented
 
@@ -21,7 +30,7 @@ passed locally (see [TESTING.md](TESTING.md)); CI is configured but has not run 
 | Monorepo (pnpm, Turborepo, TS 6.0, lockfile, release-age policy respected)                                                                                                                                                                                                                                                                                     | done                                                |
 | Config validation, production refusal of placeholder secrets / local provider / http webhooks                                                                                                                                                                                                                                                                  | verified (unit)                                     |
 | PostgreSQL schema + migrations (Drizzle), UUIDv7 ids                                                                                                                                                                                                                                                                                                           | done, applied in every test run                     |
-| Better Auth sessions, public sign-up disabled, one-time owner bootstrap, CLI token                                                                                                                                                                                                                                                                             | verified                                            |
+| Better Auth sessions, public sign-up disabled, one-time owner bootstrap, CLI token, password reset and verification through optional platform SMTP                                                                                                                                                                                                             | verified locally; real platform SMTP not tested     |
 | Organizations, roles, project-restricted memberships, invitations, last-owner protection                                                                                                                                                                                                                                                                       | verified                                            |
 | Central server-side authorization (404 for foreign resources), CSRF origin check, no CORS                                                                                                                                                                                                                                                                      | verified                                            |
 | API keys (prefix + SHA-256, scopes, expiry, revocation, once-only display)                                                                                                                                                                                                                                                                                     | verified                                            |
@@ -49,20 +58,23 @@ passed locally (see [TESTING.md](TESTING.md)); CI is configured but has not run 
 | TypeScript SDK with typed errors, idempotency, webhook verification                                                                                                                                                                                                                                                                                            | verified (unit + integration)                       |
 | Dashboard: setup, sign-in, invitations, projects, overview + onboarding, emails (search, filters, detail, timeline, sandboxed preview, attachments, cancel/resend), domains, providers, API keys, templates, webhooks (+ deliveries, dead letters, replay), suppressions, settings (environments, retention, usage, export), members, audit log, operator page | implemented; e2e covers the main path               |
 | Docker images (api, worker, web) and compose `app` profile                                                                                                                                                                                                                                                                                                     | built and smoke-tested locally                      |
-| GitHub Actions CI (lockfile install, format, build, lint, typecheck, tests with real services, e2e, image build)                                                                                                                                                                                                                                               | configured, **not run yet**                         |
+| GitHub Actions CI (frozen install, format, build, lint, typecheck, audit, tests with real services, e2e, image build)                                                                                                                                                                                                                                          | local equivalent passed; remote branch run pending  |
 
 ## Known limitations
 
-- Invitations are not emailed; the inviter copies the link. Dashboard users cannot reset
-  passwords themselves (an owner can remove and re-invite).
+- Account email, password reset, email verification and mailed invitations require an
+  operator-configured platform SMTP sender; local Mailpit is covered, but a real authenticated
+  TLS relay is not yet verified.
 - Additional organizations can only be created by the platform operator (no self-service
   sign-up by design for now).
-- Domain ownership is checked on demand, not re-verified periodically.
+- Verified domain ownership is rechecked daily; missing records receive a 72-hour grace period
+  before sending is revoked. Production resolver behavior is not covered end-to-end.
 - The operator UI covers project pause; connection pause and the platform block list are API-only
   (`/api/admin/*`).
-- Key rotation does not re-encrypt attachment objects; keep old keys until attachment retention
-  passed.
-- The rate limiter is a fixed window and fails open when Redis is unavailable.
+- Key rotation re-encrypts attachment objects in place; keep old keys until the command reports
+  zero attachment failures and a restore drill succeeds.
+- The rate limiter uses a weighted sliding window and fails closed for protected writes when
+  Redis is unavailable; readiness also reports the API unavailable.
 - The backlog check runs `count(*)` per acceptance (serialized per project); fine for moderate
   volume, not load-tested.
 - With the default policy (`content = 0 days`) content is deleted right after the final state, so
@@ -71,9 +83,11 @@ passed locally (see [TESTING.md](TESTING.md)); CI is configured but has not run 
 - Plain SMTP relays never provide a provider message id or delivery events.
 - Webhook payloads include recipient addresses for recipient-level events (personal data at the
   receiver).
-- Projects, environments and organizations cannot be deleted from the dashboard yet.
-- The pinned MinIO image is from September 2025: MinIO stopped publishing newer community images.
-  Any S3-compatible store works; the local stack may need a replacement eventually.
+- Projects, environments and organizations can be deleted through guarded danger-zone flows;
+  deletion remains an operationally sensitive beta feature.
+- The local stack uses a digest-pinned legacy MinIO community build because anonymous pulls of the
+  former Quay image now fail. Any S3-compatible store works; production should use an actively
+  maintained, operator-owned service.
 - User creation goes through Better Auth's internal adapter (`auth.$context`), which is not a
   documented public API; the version is pinned and covered by tests.
 - Dashboard navigation on narrow screens uses a compact menu; dense tables scroll horizontally.

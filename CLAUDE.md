@@ -36,7 +36,8 @@ pnpm db:generate            # after editing packages/db/src/schema.ts (creates S
   current nav item, 1px borders, IBM Plex). Every data view handles loading, empty, error and
   success. Message HTML only via `HtmlPreview` (sandboxed iframe).
 - Dependencies: exact versions, respect pnpm's `minimumReleaseAge` (pick an older release
-  instead of adding exclusions). Do not add a license; that is the owner's decision.
+  instead of adding exclusions). Licensing: platform AGPL-3.0-only, `packages/sdk` and
+  `packages/contracts` MIT. Keep them free of AGPL code: the SDK may only depend on `@opensend/contracts`, and contracts on no internal package.
 - Do not push, publish, deploy, change DNS or send real external email without explicit approval.
   Local email goes to Mailpit only.
 - zsh: quote paths with `[...]` / `(...)` (Next.js route folders).

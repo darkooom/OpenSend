@@ -379,6 +379,10 @@ export class AcceptanceService {
       const rendered = renderTemplate(
         { subject: t.version.subject, html: t.version.html, text: t.version.text },
         values,
+        {
+          maxSubjectBytes: this.config.OPENSEND_MAX_SUBJECT_LENGTH,
+          maxBodyBytes: this.config.OPENSEND_MAX_BODY_BYTES,
+        },
       );
       subject = rendered.subject;
       html = rendered.html;
@@ -389,6 +393,11 @@ export class AcceptanceService {
       subject = input.subject!;
       html = input.html ?? null;
       text = input.text ?? null;
+    }
+    if (Buffer.byteLength(subject) > this.config.OPENSEND_MAX_SUBJECT_LENGTH) {
+      throw new ApiError('payload_too_large', 'message subject too large', {
+        limit: this.config.OPENSEND_MAX_SUBJECT_LENGTH,
+      });
     }
 
     // --- sender authorization ----------------------------------------------------------
@@ -408,32 +417,32 @@ export class AcceptanceService {
     const allSuppressed = deliverable.length === 0;
 
     // --- quota + backlog (serialized per project by the usage row lock) -----------------
-    if (!allSuppressed) {
-      await reserveRecipientQuota(tx, {
-        projectId: ctx.projectId,
-        environmentId: ctx.environmentId,
-        emailId,
-        recipients: deliverable.length,
-        limit: project.monthlyRecipientQuota ?? this.config.OPENSEND_DEFAULT_MONTHLY_QUOTA,
-      });
-      const [{ pending }] = (
-        await tx.execute<{ pending: number }>(sql`
+    // Every accepted request creates durable records, even when every recipient is suppressed.
+    // Charge all accepted recipients so suppression cannot bypass the tenant resource budget.
+    await reserveRecipientQuota(tx, {
+      projectId: ctx.projectId,
+      environmentId: ctx.environmentId,
+      emailId,
+      recipients: prepared.recipients.length,
+      limit: project.monthlyRecipientQuota ?? this.config.OPENSEND_DEFAULT_MONTHLY_QUOTA,
+    });
+    const [{ pending }] = (
+      await tx.execute<{ pending: number }>(sql`
           SELECT count(*)::int AS pending FROM emails
            WHERE environment_id = ${ctx.environmentId}
              AND status IN (${sql.join(
                PENDING_STATUSES.map((s) => sql`${s}`),
                sql`, `,
              )})`)
-      ).rows as [{ pending: number }];
-      if (pending >= this.config.OPENSEND_MAX_PENDING_PER_ENVIRONMENT) {
-        throw new ApiError(
-          'backlog_limit_exceeded',
-          'too many pending emails in this environment; retry later',
-          {
-            limit: this.config.OPENSEND_MAX_PENDING_PER_ENVIRONMENT,
-          },
-        );
-      }
+    ).rows as [{ pending: number }];
+    if (pending >= this.config.OPENSEND_MAX_PENDING_PER_ENVIRONMENT) {
+      throw new ApiError(
+        'backlog_limit_exceeded',
+        'too many pending emails in this environment; retry later',
+        {
+          limit: this.config.OPENSEND_MAX_PENDING_PER_ENVIRONMENT,
+        },
+      );
     }
 
     // --- persist the job -----------------------------------------------------------------

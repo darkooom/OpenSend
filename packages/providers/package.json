@@ -1,6 +1,7 @@
 {
   "name": "@opensend/providers",
   "version": "0.1.0",
+  "license": "AGPL-3.0-only",
   "private": true,
   "description": "Pluggable sending providers (local Mailpit, generic SMTP, Amazon SES) with explicit capabilities.",
   "main": "dist/index.js",

@@ -15,6 +15,8 @@ export const templateVariableSchema = z.object({
 export type TemplateVariable = z.infer<typeof templateVariableSchema>;
 export type TemplateValues = Record<string, string | number | boolean | null>;
 
+const MAX_TEMPLATE_VALUE_BYTES = 10_000;
+
 export class TemplateError extends Error {
   constructor(
     message: string,
@@ -87,8 +89,16 @@ export function resolveValues(
     throw new TemplateError('unknown template variables', { variables: unknown });
   for (const v of variables) {
     const value = provided[v.name];
-    if (value !== undefined && value !== null) out[v.name] = String(value);
-    else if (mode === 'preview') out[v.name] = v.sample ?? v.fallback ?? `[${v.name}]`;
+    if (value !== undefined && value !== null) {
+      const rendered = String(value);
+      if (Buffer.byteLength(rendered) > MAX_TEMPLATE_VALUE_BYTES) {
+        throw new TemplateError('template variable is too large', {
+          variable: v.name,
+          limit: MAX_TEMPLATE_VALUE_BYTES,
+        });
+      }
+      out[v.name] = rendered;
+    } else if (mode === 'preview') out[v.name] = v.sample ?? v.fallback ?? `[${v.name}]`;
     else if (v.fallback !== undefined) out[v.name] = v.fallback;
     else if (v.required) missing.push(v.name);
     else out[v.name] = '';
@@ -104,16 +114,61 @@ export interface RenderedContent {
   text: string | null;
 }
 
+export interface RenderLimits {
+  maxSubjectBytes: number;
+  maxBodyBytes: number;
+}
+
+function estimatedRenderedBytes(
+  source: string,
+  values: Record<string, string>,
+  html: boolean,
+): number {
+  let estimate = Buffer.byteLength(source);
+  const walk = (tokens: unknown[]): void => {
+    for (const token of tokens as Array<[string, string, number, number, unknown[]?]>) {
+      const [type, name, , , children] = token;
+      if (type === 'name' || type === '&' || type === '{') {
+        // HTML escaping can expand one input byte to six ASCII bytes (for example, `"`).
+        estimate += Buffer.byteLength(values[name] ?? '') * (html && type === 'name' ? 6 : 1);
+      }
+      if (Array.isArray(children)) walk(children);
+    }
+  };
+  walk(Mustache.parse(source));
+  return estimate;
+}
+
 export function renderTemplate(
   source: { subject: string; html?: string | null; text?: string | null },
   values: Record<string, string>,
+  limits: RenderLimits = { maxSubjectBytes: 998, maxBodyBytes: 2 * 1024 * 1024 },
 ): RenderedContent {
+  if (estimatedRenderedBytes(source.subject, values, false) > limits.maxSubjectBytes) {
+    throw new TemplateError('rendered subject is too large', { limit: limits.maxSubjectBytes });
+  }
+  const estimatedBodyBytes =
+    (source.html ? estimatedRenderedBytes(source.html, values, true) : 0) +
+    (source.text ? estimatedRenderedBytes(source.text, values, false) : 0);
+  if (estimatedBodyBytes > limits.maxBodyBytes) {
+    throw new TemplateError('rendered message body is too large', { limit: limits.maxBodyBytes });
+  }
   const plain = (s: string) => Mustache.render(s, values, {}, { escape: (v: string) => v });
   const subject = plain(source.subject);
   if (/[\r\n]/.test(subject)) throw new TemplateError('rendered subject contains a line break');
-  return {
+  const rendered = {
     subject,
     html: source.html ? Mustache.render(source.html, values) : null,
     text: source.text ? plain(source.text) : null,
   };
+  if (Buffer.byteLength(rendered.subject) > limits.maxSubjectBytes) {
+    throw new TemplateError('rendered subject is too large', { limit: limits.maxSubjectBytes });
+  }
+  if (
+    Buffer.byteLength(rendered.html ?? '') + Buffer.byteLength(rendered.text ?? '') >
+    limits.maxBodyBytes
+  ) {
+    throw new TemplateError('rendered message body is too large', { limit: limits.maxBodyBytes });
+  }
+  return rendered;
 }

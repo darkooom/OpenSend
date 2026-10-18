@@ -30,6 +30,8 @@ export const domainResourceSchema = z.object({
     record: dnsRecordSchema,
     checkedAt: z.string().nullable(),
     lastError: z.string().nullable(),
+    /** Set when the periodic re-check no longer finds the TXT record. */
+    missingSince: z.string().nullable(),
   }),
   provider: z.object({
     connectionId: z.string().nullable(),

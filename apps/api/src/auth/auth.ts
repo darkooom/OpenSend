@@ -2,13 +2,15 @@ import type { AppConfig } from '@opensend/config';
 import { account, session, user, verification, type Database } from '@opensend/db';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { accountEmails, type PlatformMailer } from '../mail/platform-mailer';
 
 /**
  * The single authentication system for dashboard users (Better Auth, email + password).
  * Public sign-up is disabled: users are created by the one-time owner bootstrap or by
- * accepting an invitation (see SetupService / InvitationsService).
+ * accepting an invitation (see SetupService / OrgsService). Password reset and email
+ * verification are only offered when the operator configured a platform sender.
  */
-export function createAuth(db: Database, config: AppConfig) {
+export function createAuth(db: Database, config: AppConfig, mailer: PlatformMailer) {
   const production = config.NODE_ENV === 'production';
   return betterAuth({
     appName: 'OpenSend',
@@ -25,7 +27,39 @@ export function createAuth(db: Database, config: AppConfig) {
       disableSignUp: true,
       minPasswordLength: 12,
       maxPasswordLength: 256,
+      resetPasswordTokenExpiresIn: 60 * 60,
+      revokeSessionsOnPasswordReset: true,
+      ...(mailer.enabled
+        ? {
+            sendResetPassword: async ({
+              user: u,
+              url,
+            }: {
+              user: { email: string };
+              url: string;
+            }) => {
+              await mailer.send(accountEmails.passwordReset({ to: u.email, url }));
+            },
+          }
+        : {}),
     },
+    ...(mailer.enabled
+      ? {
+          emailVerification: {
+            expiresIn: 60 * 60 * 24,
+            autoSignInAfterVerification: false,
+            sendVerificationEmail: async ({
+              user: u,
+              url,
+            }: {
+              user: { email: string };
+              url: string;
+            }) => {
+              await mailer.send(accountEmails.verification({ to: u.email, url }));
+            },
+          },
+        }
+      : {}),
     user: {
       additionalFields: {
         platformRole: { type: 'string', required: false, input: false },
@@ -57,7 +91,7 @@ export async function createCredentialUser(
   if (input.password.length < 12) throw new Error('password must be at least 12 characters');
   const hash = await ctx.password.hash(input.password);
   const created = await ctx.internalAdapter.createUser(
-    { email: input.email.toLowerCase(), name: input.name, emailVerified: true },
+    { email: input.email.toLowerCase(), name: input.name, emailVerified: false },
     { method: 'email-password' } as never,
   );
   await ctx.internalAdapter.linkAccount({

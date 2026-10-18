@@ -73,8 +73,9 @@ a slow hash). The full key is shown once. Revocation and expiry take effect imme
   `OPENSEND_ENCRYPTION_ACTIVE_KEY_ID`. They never live in the database.
 - **Rotation**: add a new key, make it active, restart, run
   `pnpm --filter @opensend/api cli rotate-encryption` (re-encrypts credentials, webhook secrets
-  and stored content). Keep the old key configured until the attachment retention of all
-  projects has passed (attachments are not re-encrypted), then remove it.
+  stored content and unpurged attachment objects). Keep the old key configured until the command
+  reports zero attachment failures, then remove it only after a backup/restore check with the new
+  key set.
 - Production refuses to start with known placeholder secrets, with the local provider enabled,
   with http webhooks allowed, or without an https `PUBLIC_WEB_URL`.
 

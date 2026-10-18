@@ -28,7 +28,8 @@ import { type Auth, createCredentialUser } from '../auth/auth';
 import type { SessionUser } from '../auth/guards';
 import { ApiError, forbidden, notFound } from '../common/errors';
 import { parseOrThrow } from '../common/zod';
-import { AUTH, CONFIG, DB } from '../infra/tokens';
+import { AUTH, CONFIG, DB, PLATFORM_MAILER } from '../infra/tokens';
+import { accountEmails, type PlatformMailer } from '../mail/platform-mailer';
 import { slugify } from './slug';
 
 const projectAccessSchema = z
@@ -50,6 +51,8 @@ const acceptSchema = z.object({
   name: z.string().trim().min(1).max(100).optional(),
   password: z.string().min(12).max(256).optional(),
 });
+const INVITATIONS_PER_DAY = 50;
+
 const createProjectSchema = z.object({
   name: z.string().trim().min(1).max(100),
   environments: z
@@ -71,6 +74,7 @@ export class OrgsService {
     @Inject(AUTH) private readonly auth: Auth,
     @Inject(CONFIG) private readonly config: AppConfig,
     private readonly access: AccessService,
+    @Inject(PLATFORM_MAILER) private readonly mailer: PlatformMailer,
   ) {}
 
   async me(u: SessionUser) {
@@ -399,7 +403,10 @@ export class OrgsService {
     }));
   }
 
-  /** Returns the invitation link once. Delivery of the link is up to the inviter (no email is sent). */
+  /**
+   * Returns the invitation link once. When the operator configured a platform sender the link
+   * is also emailed to the invitee; otherwise the inviter shares it.
+   */
   async invite(u: SessionUser, orgId: string, raw: unknown, ip: string | null) {
     const actor = await this.access.requireOrg(u, orgId, 'members.manage');
     const input = parseOrThrow(inviteSchema, raw);
@@ -416,6 +423,16 @@ export class OrgsService {
         .where(and(eq(memberships.organizationId, orgId), eq(user.email, email)))
         .limit(1);
       if (existing.length) throw new ApiError('conflict', 'this person is already a member');
+      // Invitations can send email, so they are capped per organization and day.
+      const recent = await tx.execute<{ n: number }>(sql`
+        SELECT count(*)::int AS n FROM invitations
+         WHERE organization_id = ${orgId} AND created_at > now() - interval '24 hours'`);
+      if (Number(recent.rows[0]?.n ?? 0) >= INVITATIONS_PER_DAY) {
+        throw new ApiError(
+          'rate_limited',
+          `at most ${INVITATIONS_PER_DAY} invitations per organization and day`,
+        );
+      }
       const [inv] = await tx
         .insert(invitations)
         .values({
@@ -441,12 +458,28 @@ export class OrgsService {
       });
       return inv!;
     });
+    const url = `${this.config.PUBLIC_WEB_URL.replace(/\/$/, '')}/invite?token=${encodeURIComponent(token)}`;
+    const [org] = await this.db
+      .select({ name: organizations.name })
+      .from(organizations)
+      .where(eq(organizations.id, orgId));
+    const emailSent = await this.mailer.send(
+      accountEmails.invitation({
+        to: row.email,
+        organization: org?.name ?? 'an organization',
+        role: row.role,
+        inviter: u.name || u.email,
+        url,
+        expiresAt: row.expiresAt,
+      }),
+    );
     return {
       id: row.id,
       email: row.email,
       role: row.role,
       expiresAt: row.expiresAt.toISOString(),
-      url: `${this.config.PUBLIC_WEB_URL.replace(/\/$/, '')}/invite?token=${encodeURIComponent(token)}`,
+      url,
+      emailSent,
     };
   }
 

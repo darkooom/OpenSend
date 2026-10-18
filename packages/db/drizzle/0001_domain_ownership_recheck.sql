@@ -1,0 +1,1 @@
+ALTER TABLE "domains" ADD COLUMN "ownership_missing_since" timestamp with time zone;

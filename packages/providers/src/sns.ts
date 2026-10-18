@@ -27,6 +27,7 @@ export type SnsMessage = z.infer<typeof snsMessageSchema>;
 export class SnsVerificationError extends Error {}
 
 const SNS_HOST = /^sns\.[a-z0-9-]+\.amazonaws\.com(\.cn)?$/;
+const SNS_CERT_PATH = /^\/SimpleNotificationService-[A-Za-z0-9_-]+\.pem$/;
 
 export function isTrustedSnsUrl(raw: string, kind: 'cert' | 'subscribe'): boolean {
   let url: URL;
@@ -35,9 +36,17 @@ export function isTrustedSnsUrl(raw: string, kind: 'cert' | 'subscribe'): boolea
   } catch {
     return false;
   }
-  if (url.protocol !== 'https:' || url.port !== '' || url.username || url.password) return false;
+  if (
+    url.protocol !== 'https:' ||
+    url.port !== '' ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash
+  )
+    return false;
   if (!SNS_HOST.test(url.hostname)) return false;
-  if (kind === 'cert' && !url.pathname.endsWith('.pem')) return false;
+  if (kind === 'cert' && !SNS_CERT_PATH.test(url.pathname)) return false;
   return true;
 }
 
@@ -59,15 +68,37 @@ export function snsStringToSign(m: SnsMessage): string {
 export type CertFetcher = (url: string) => Promise<string>;
 
 const certCache = new Map<string, { pem: string; at: number }>();
+const failedCertCache = new Map<string, number>();
+const inFlightCerts = new Map<string, Promise<string>>();
 export const defaultCertFetcher: CertFetcher = async (url) => {
   const cached = certCache.get(url);
   if (cached && Date.now() - cached.at < 60 * 60_000) return cached.pem;
-  const res = await undiciFetch(url, { redirect: 'error', signal: AbortSignal.timeout(5000) });
-  if (!res.ok) throw new SnsVerificationError(`certificate download failed (${res.status})`);
-  const pem = await res.text();
-  if (pem.length > 20_000) throw new SnsVerificationError('certificate too large');
-  certCache.set(url, { pem, at: Date.now() });
-  return pem;
+  const failedAt = failedCertCache.get(url);
+  if (failedAt && Date.now() - failedAt < 60_000) {
+    throw new SnsVerificationError('certificate download recently failed');
+  }
+  const existing = inFlightCerts.get(url);
+  if (existing) return existing;
+  const request = (async () => {
+    try {
+      const res = await undiciFetch(url, { redirect: 'error', signal: AbortSignal.timeout(5000) });
+      if (!res.ok) throw new SnsVerificationError(`certificate download failed (${res.status})`);
+      const pem = await res.text();
+      if (pem.length > 20_000) throw new SnsVerificationError('certificate too large');
+      if (certCache.size >= 64) certCache.delete(certCache.keys().next().value!);
+      certCache.set(url, { pem, at: Date.now() });
+      failedCertCache.delete(url);
+      return pem;
+    } catch (error) {
+      if (failedCertCache.size >= 64) failedCertCache.delete(failedCertCache.keys().next().value!);
+      failedCertCache.set(url, Date.now());
+      throw error;
+    } finally {
+      inFlightCerts.delete(url);
+    }
+  })();
+  inFlightCerts.set(url, request);
+  return request;
 };
 
 export interface SnsVerifyOptions {

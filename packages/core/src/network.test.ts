@@ -84,3 +84,12 @@ describe('safeFetch', () => {
     ).rejects.toThrow();
   });
 });
+
+describe('address preference', () => {
+  it('prefers IPv4 when a single address is requested', async () => {
+    const dns = fakeDns({ 'dual.example.org': ['2606:4700::1', '8.8.8.8'] });
+    await expect(resolveSafeAddress('dual.example.org', {}, dns)).resolves.toBe('8.8.8.8');
+    const v6only = fakeDns({ 'v6.example.org': ['2606:4700::1'] });
+    await expect(resolveSafeAddress('v6.example.org', {}, v6only)).resolves.toBe('2606:4700::1');
+  });
+});

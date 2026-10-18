@@ -219,6 +219,13 @@ describe('SNS verification', () => {
       isTrustedSnsUrl('https://sns.eu-central-1.amazonaws.com.evil.example/x.pem', 'cert'),
     ).toBe(false);
     expect(isTrustedSnsUrl('http://sns.eu-central-1.amazonaws.com/x.pem', 'cert')).toBe(false);
+    expect(
+      isTrustedSnsUrl(
+        'https://sns.eu-central-1.amazonaws.com/SimpleNotificationService-test.pem?cache=x',
+        'cert',
+      ),
+    ).toBe(false);
+    expect(isTrustedSnsUrl('https://sns.eu-central-1.amazonaws.com/other.pem', 'cert')).toBe(false);
   });
   it('rejects stale messages', async () => {
     await expect(

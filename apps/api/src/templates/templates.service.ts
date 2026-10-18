@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { AppConfig } from '@opensend/config';
 import {
   TemplateError,
   renderTemplate,
@@ -14,7 +15,7 @@ import type { EnvironmentAccess } from '../access/access.service';
 import type { SessionUser } from '../auth/guards';
 import { ApiError, notFound } from '../common/errors';
 import { parseOrThrow } from '../common/zod';
-import { DB } from '../infra/tokens';
+import { CONFIG, DB } from '../infra/tokens';
 
 const draftSchema = z.object({
   name: z.string().trim().min(1).max(100),
@@ -39,7 +40,7 @@ const updateSchema = z.object({
 const previewSchema = z.object({
   version: z.number().int().positive().optional(),
   variables: z
-    .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+    .record(z.string(), z.union([z.string().max(10_000), z.number(), z.boolean(), z.null()]))
     .default({}),
 });
 
@@ -51,7 +52,10 @@ type TemplateRow = typeof templates.$inferSelect;
  */
 @Injectable()
 export class TemplatesService {
-  constructor(@Inject(DB) private readonly db: Database) {}
+  constructor(
+    @Inject(DB) private readonly db: Database,
+    @Inject(CONFIG) private readonly config: AppConfig,
+  ) {}
 
   private view(t: TemplateRow) {
     return {
@@ -268,7 +272,10 @@ export class TemplatesService {
     }
     try {
       const values = resolveValues(source.variables, input.variables, 'preview');
-      return renderTemplate(source, values);
+      return renderTemplate(source, values, {
+        maxSubjectBytes: this.config.OPENSEND_MAX_SUBJECT_LENGTH,
+        maxBodyBytes: this.config.OPENSEND_MAX_BODY_BYTES,
+      });
     } catch (err) {
       if (err instanceof TemplateError)
         throw new ApiError('validation_error', err.message, err.details);

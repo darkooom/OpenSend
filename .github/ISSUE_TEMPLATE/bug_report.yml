@@ -1,0 +1,82 @@
+name: Bug report
+description: Report reproducible incorrect behavior in OpenSend
+title: '[Bug]: '
+labels: [bug, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues first. For vulnerabilities, use the private process in `SECURITY.md`.
+        Do not include secrets, cookies, recipient/customer data, message contents, production database extracts, or unredacted logs.
+  - type: input
+    id: version
+    attributes:
+      label: OpenSend version
+      description: Release tag or commit SHA.
+      placeholder: v0.1.0-beta.1 or abc1234
+    validations:
+      required: true
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation method
+      options:
+        - Docker Compose app profile
+        - Local pnpm development setup
+        - Custom container deployment
+        - Other self-hosted deployment
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Sending provider
+      options:
+        - Local Mailpit
+        - Generic SMTP relay
+        - Amazon SES
+        - Not provider-related
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Use fictional addresses and data. Include the smallest reliable sequence.
+      placeholder: |
+        1. Configure ...
+        2. Call ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant redacted logs
+      description: Remove authorization headers, cookies, keys, credentials, message content, email addresses, customer data and private infrastructure details.
+      render: shell
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node, pnpm, Docker/Compose, PostgreSQL and Redis versions; configuration variable names only.
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Data-safety confirmation
+      options:
+        - label: I removed secrets, personal data, message content and sensitive recipient/customer information.
+          required: true

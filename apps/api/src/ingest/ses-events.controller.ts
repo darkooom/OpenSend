@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Inject, Param, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Inject, Param, Post, Req } from '@nestjs/common';
 import type { AppConfig } from '@opensend/config';
 import { enqueueOutbox, type Logger } from '@opensend/core';
 import { and, eq, providerConnections, providerEvents, type Database } from '@opensend/db';
@@ -10,7 +10,9 @@ import {
   type CertFetcher,
 } from '@opensend/providers';
 import { fetch as undiciFetch } from 'undici';
+import type { Request } from 'express';
 import { ApiError } from '../common/errors';
+import { RateLimitService } from '../common/rate-limit.service';
 import { CONFIG, DB, LOGGER } from '../infra/tokens';
 
 export const SNS_CERT_FETCHER = Symbol('SNS_CERT_FETCHER');
@@ -27,11 +29,16 @@ export class SesEventsController {
     @Inject(CONFIG) private readonly config: AppConfig,
     @Inject(LOGGER) private readonly logger: Logger,
     @Inject(SNS_CERT_FETCHER) private readonly fetchCert: CertFetcher | null,
+    private readonly rateLimit: RateLimitService,
   ) {}
 
   @Post(':connectionId')
   @HttpCode(200)
-  async receive(@Param('connectionId') connectionId: string, @Body() rawBody: unknown) {
+  async receive(
+    @Param('connectionId') connectionId: string,
+    @Body() rawBody: unknown,
+    @Req() req: Request,
+  ) {
     if (!/^[0-9a-f-]{36}$/i.test(connectionId)) throw new ApiError('not_found', 'unknown endpoint');
     const [connection] = await this.db
       .select()
@@ -39,6 +46,20 @@ export class SesEventsController {
       .where(and(eq(providerConnections.id, connectionId), eq(providerConnections.type, 'ses')))
       .limit(1);
     if (!connection) throw new ApiError('not_found', 'unknown endpoint');
+    const source = req.ip || req.socket.remoteAddress || 'unknown';
+    await this.rateLimit.enforceAll(
+      [
+        {
+          bucket: `ses-connection:${connectionId}`,
+          limit: this.config.OPENSEND_SES_WEBHOOK_RATE_LIMIT_PER_MINUTE,
+        },
+        {
+          bucket: `ses-source:${source}`,
+          limit: this.config.OPENSEND_SES_WEBHOOK_RATE_LIMIT_PER_MINUTE,
+        },
+      ],
+      undefined,
+    );
     const body = typeof rawBody === 'string' ? safeJson(rawBody) : rawBody;
     const topics = [
       ...((connection.config as { snsTopicArns?: string[] }).snsTopicArns ?? []),

@@ -1,12 +1,14 @@
 {
   "name": "@opensend/sdk",
   "version": "0.1.0",
+  "license": "MIT",
   "private": true,
   "description": "Small TypeScript client for the OpenSend public API (server-side only).",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

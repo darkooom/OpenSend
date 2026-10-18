@@ -10,7 +10,8 @@
 | Migrations | `node packages/db/dist/migrate.js`                | exit code                                                                                      |
 
 The API can accept email while Redis is down: acceptance only needs PostgreSQL and object
-storage, and the outbox keeps the work. The rate limiter fails open (logged).
+storage, and the outbox keeps the work. Protected writes fail closed when the Redis-backed rate
+limiter is unavailable, and readiness returns unavailable until it recovers.
 
 ## Graceful shutdown
 
@@ -38,7 +39,8 @@ request), webhooks `OPENSEND_WEBHOOK_TIMEOUT_MS` (10 s), DB statements 30 s, idl
 
 ## Metrics
 
-`GET /metrics` (Prometheus text; `Authorization: Bearer $OPENSEND_METRICS_TOKEN` if set):
+`GET /metrics` (Prometheus text; `Authorization: Bearer $OPENSEND_METRICS_TOKEN`; the token is
+required in production):
 
 - `opensend_emails{status}` — emails by status
 - `opensend_outbox_oldest_age_seconds` — age of the oldest due, unprocessed outbox row (queue age)

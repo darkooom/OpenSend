@@ -6,3 +6,4 @@ export * from './webhooks';
 export * from './provider-events';
 export * from './maintenance';
 export * from './retention';
+export * from './domains';

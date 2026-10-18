@@ -65,7 +65,8 @@ once (`migrate` service) and starts API, worker and dashboard. The dashboard ima
 - `OPENSEND_LOCAL_PROVIDER_ENABLED=false` (enforced), `OPENSEND_WEBHOOK_ALLOW_HTTP=false`
   (enforced).
 - Create the S3 bucket beforehand (outside production the API creates it). Block public access.
-- Set `OPENSEND_METRICS_TOKEN` or keep `/metrics` unreachable from the internet.
+- Set `OPENSEND_METRICS_TOKEN` (production startup requires it) and keep `/metrics` outside the
+  public application ingress when possible.
 - Run `pnpm db:migrate` (or `node packages/db/dist/migrate.js`) before starting new versions.
 - Run at least one worker. Several workers are safe (leases, `SKIP LOCKED`, job-id dedupe).
 - Configure backups (see [OPERATIONS.md](OPERATIONS.md)).

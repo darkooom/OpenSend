@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Field, FormError } from '@/components/auth-card';
-import { EmptyState, LoadingRows, PageHeader, QueryView } from '@/components/states';
+import { DeleteScope } from '@/components/danger-zone';
+import { EmptyState, LoadingRows, PageHeader, QueryView, Section } from '@/components/states';
 import { EnvBadge, Pill } from '@/components/status';
 import { Button } from '@/components/ui/button';
 import {
@@ -148,6 +149,19 @@ export default function OrgPage() {
           )
         }
       </QueryView>
+      {org.data?.role === 'owner' && (
+        <Section title="Danger zone">
+          <div className="rounded-md border border-destructive/30 bg-card">
+            <DeleteScope
+              label="Delete this organization"
+              name={org.data.organization.name}
+              path={`/orgs/${orgId}`}
+              consequences="Removes all projects, members, data and its audit log. User accounts remain."
+              onDeleted={() => (location.href = '/')}
+            />
+          </div>
+        </Section>
+      )}
     </>
   );
 }

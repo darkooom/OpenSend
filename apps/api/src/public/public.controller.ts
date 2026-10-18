@@ -42,6 +42,17 @@ export class PublicController {
   private scope(k: ApiKeyContext) {
     return { projectId: k.projectId, environmentId: k.environmentId };
   }
+  /** Per-key and per-project sending limits (sliding window, per minute). */
+  private limits(k: ApiKeyContext) {
+    return [
+      { bucket: `key:${k.keyId}`, limit: this.config.OPENSEND_RATE_LIMIT_PER_MINUTE },
+      {
+        bucket: `project:${k.projectId}`,
+        limit: this.config.OPENSEND_RATE_LIMIT_PER_PROJECT_PER_MINUTE,
+      },
+    ];
+  }
+
   private domainScope(k: ApiKeyContext): DomainScope {
     return {
       organizationId: k.organizationId,
@@ -59,11 +70,7 @@ export class PublicController {
     @Res({ passthrough: true }) res: Response,
   ) {
     requireScope(key, 'emails:send');
-    await this.rateLimit.enforce(
-      `key:${key.keyId}`,
-      this.config.OPENSEND_RATE_LIMIT_PER_MINUTE,
-      res,
-    );
+    await this.rateLimit.enforceAll(this.limits(key), res);
     const result = await this.acceptance.accept(
       { ...this.scope(key), apiKeyId: key.keyId },
       body,
@@ -96,11 +103,7 @@ export class PublicController {
     }
     if (idempotencyKey && idempotencyKey.length > 240)
       throw new ApiError('invalid_request', 'Idempotency-Key too long for batch use');
-    await this.rateLimit.enforce(
-      `key:${key.keyId}`,
-      this.config.OPENSEND_RATE_LIMIT_PER_MINUTE,
-      res,
-    );
+    await this.rateLimit.enforceAll(this.limits(key), res, items.length);
     const batchId = uuidv7();
     const out: BatchResponse = { object: 'batch', id: batchId, data: [], errors: [] };
     // Each item is accepted in its own transaction: one invalid item does not block the others.

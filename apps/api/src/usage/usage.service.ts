@@ -51,6 +51,7 @@ export class UsageService {
         maxBatchSize: this.config.OPENSEND_MAX_BATCH_SIZE,
         maxPendingPerEnvironment: this.config.OPENSEND_MAX_PENDING_PER_ENVIRONMENT,
         rateLimitPerMinute: this.config.OPENSEND_RATE_LIMIT_PER_MINUTE,
+        projectRateLimitPerMinute: this.config.OPENSEND_RATE_LIMIT_PER_PROJECT_PER_MINUTE,
       },
     };
   }

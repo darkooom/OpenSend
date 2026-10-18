@@ -46,6 +46,7 @@ export default function MembersPage() {
   const canManage = org.data && ['owner', 'admin'].includes(org.data.role);
   const invitations = useApi<Invitation[]>(canManage ? `/orgs/${orgId}/invitations` : null);
   const [link, setLink] = useState<string | null>(null);
+  const [emailedTo, setEmailedTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [access, setAccess] = useState<'all' | 'selected'>('all');
   const [selected, setSelected] = useState<string[]>([]);
@@ -89,7 +90,7 @@ export default function MembersPage() {
       {canManage && (
         <Section
           title="Invite someone"
-          description="Invitations expire and can be used once. No email is sent: share the link yourself."
+          description="Invitations expire and can be used once. They are emailed when the instance has a platform sender; the link is always shown once."
         >
           <form
             className="grid gap-4 rounded-md border bg-card p-4 md:grid-cols-[1fr_180px_auto] md:items-end"
@@ -98,16 +99,20 @@ export default function MembersPage() {
               const f = new FormData(e.currentTarget);
               setError(null);
               try {
-                const r = await api<{ url: string }>(`/orgs/${orgId}/invitations`, {
-                  method: 'POST',
-                  body: {
-                    email: f.get('email'),
-                    role: f.get('role'),
-                    projectAccess: access,
-                    projectIds: access === 'selected' ? selected : [],
+                const r = await api<{ url: string; email: string; emailSent: boolean }>(
+                  `/orgs/${orgId}/invitations`,
+                  {
+                    method: 'POST',
+                    body: {
+                      email: f.get('email'),
+                      role: f.get('role'),
+                      projectAccess: access,
+                      projectIds: access === 'selected' ? selected : [],
+                    },
                   },
-                });
+                );
                 setLink(r.url);
+                setEmailedTo(r.emailSent ? r.email : null);
                 (e.target as HTMLFormElement).reset();
                 await invitations.refetch();
               } catch (err) {
@@ -174,6 +179,14 @@ export default function MembersPage() {
             </fieldset>
             <div className="md:col-span-3">
               <FormError message={error} />
+              {link && emailedTo && (
+                <p
+                  role="status"
+                  className="mb-2 rounded-md border border-success/30 bg-success-soft px-3 py-2 text-success"
+                >
+                  Invitation emailed to {emailedTo}. You can also share the link below.
+                </p>
+              )}
               {link && <OneTimeSecret value={link} what="invitation link" />}
             </div>
           </form>

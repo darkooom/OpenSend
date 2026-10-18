@@ -1,12 +1,14 @@
 {
   "name": "@opensend/contracts",
   "version": "0.1.0",
+  "license": "MIT",
   "private": true,
   "description": "Shared, versioned data contracts (Zod) for the OpenSend public API, webhooks and dashboard.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

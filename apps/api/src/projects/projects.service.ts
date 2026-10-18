@@ -214,6 +214,11 @@ export class ProjectsService {
     for (const d of domainRows) {
       if (!d.localOnly && !d.ownershipVerifiedAt)
         warnings.push({ level: 'warning', message: `Domain ${d.name}: ownership not verified` });
+      if (d.ownershipMissingSince)
+        warnings.push({
+          level: 'error',
+          message: `Domain ${d.name}: ownership TXT record missing since ${d.ownershipMissingSince.toISOString().slice(0, 16).replace('T', ' ')} UTC; sending from it stops after 72 hours`,
+        });
       if (d.providerStatus === 'failed')
         warnings.push({
           level: 'error',

@@ -8,11 +8,17 @@ import { pinoHttp } from 'pino-http';
 import { AppModule } from './app.module';
 
 export { setSnsCertFetcher } from './app.module';
+export { rotateEncryption } from './maintenance/rotate-encryption';
 import type { Auth } from './auth/auth';
 import { originCheckMiddleware, requestIdMiddleware } from './common/request-context';
 import { configureInfra, type InfraOverrides } from './infra/infra.module';
 import { AUTH, LOGGER } from './infra/tokens';
 import type { Logger } from '@opensend/core';
+
+export function sanitizeRequestUrl(url: string): string {
+  const pathname = url.split('?')[0] ?? '';
+  return pathname.startsWith('/api/auth/') ? '/api/auth/[redacted]' : pathname;
+}
 
 /** Builds the HTTP application (used by main.ts and the integration tests). */
 export async function createApp(overrides: InfraOverrides): Promise<NestExpressApplication> {
@@ -39,7 +45,9 @@ export async function createApp(overrides: InfraOverrides): Promise<NestExpressA
         req: (req: { id: string; method: string; url: string }) => ({
           id: req.id,
           method: req.method,
-          url: req.url,
+          // Query strings commonly carry one-time invitation and recovery credentials.
+          // Auth routes may also carry a credential in a path segment, so collapse them.
+          url: sanitizeRequestUrl(req.url),
         }),
       },
     }),

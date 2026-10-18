@@ -10,6 +10,7 @@ import { QUEUES, type JobKind, type JobPayload, type WorkerDeps } from './deps';
 import { dispatchOutbox } from './dispatcher';
 import { clarifyUnknownSubmissions, reapExpiredLeases } from './maintenance';
 import { processProviderEvent, reconcileProviderEvents } from './provider-events';
+import { recheckDomainOwnership } from './domains';
 import { runRetention } from './retention';
 import { processSendEmail } from './send';
 import { processWebhookDelivery } from './webhooks';
@@ -134,6 +135,7 @@ async function main() {
   every('reap-leases', 30_000, () => reapExpiredLeases(deps));
   every('clarify-unknown', 60_000, () => clarifyUnknownSubmissions(deps));
   every('reconcile-provider-events', 60_000, () => reconcileProviderEvents(deps));
+  every('recheck-domains', 15 * 60_000, () => recheckDomainOwnership(deps), 120_000);
   every('retention', 10 * 60_000, () => runRetention(deps), 60_000);
 
   // ---- health endpoint for orchestration ---------------------------------------------------

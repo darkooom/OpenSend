@@ -176,6 +176,7 @@ export class DomainsService {
         const txt = await this.dns.resolveTxt(ownershipRecordName(domain.name));
         if (txt.some((v) => v.trim() === ownershipRecordValue(domain.ownershipToken))) {
           patch.ownershipVerifiedAt = domain.ownershipVerifiedAt ?? now;
+          patch.ownershipMissingSince = null;
           patch.ownershipLastError = null;
         } else {
           patch.ownershipLastError = txt.length
@@ -414,6 +415,7 @@ export class DomainsService {
         record: ownershipRecord,
         checkedAt: row.ownershipCheckedAt?.toISOString() ?? null,
         lastError: row.ownershipLastError,
+        missingSince: row.ownershipMissingSince?.toISOString() ?? null,
       },
       provider: {
         connectionId: row.providerConnectionId,

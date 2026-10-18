@@ -25,6 +25,8 @@ describe('parseConfig', () => {
         ...base,
         NODE_ENV: 'production',
         PUBLIC_WEB_URL: 'https://app.example.org',
+        PUBLIC_API_URL: 'https://api.example.org',
+        OPENSEND_METRICS_TOKEN: 'metrics-secret',
         BETTER_AUTH_SECRET: 'opensend-dev-secret-do-not-use-in-production',
       }),
     ).toThrow(ConfigError);
@@ -36,6 +38,8 @@ describe('parseConfig', () => {
         ...base,
         NODE_ENV: 'production',
         PUBLIC_WEB_URL: 'https://app.example.org',
+        PUBLIC_API_URL: 'https://api.example.org',
+        OPENSEND_METRICS_TOKEN: 'metrics-secret',
         OPENSEND_LOCAL_PROVIDER_ENABLED: 'true',
       }),
     ).toThrow(/LOCAL_PROVIDER/);
@@ -43,7 +47,36 @@ describe('parseConfig', () => {
 
   it('accepts a hardened production configuration', () => {
     expect(() =>
-      parseConfig({ ...base, NODE_ENV: 'production', PUBLIC_WEB_URL: 'https://app.example.org' }),
+      parseConfig({
+        ...base,
+        NODE_ENV: 'production',
+        PUBLIC_WEB_URL: 'https://app.example.org',
+        PUBLIC_API_URL: 'https://api.example.org',
+        OPENSEND_METRICS_TOKEN: 'metrics-secret',
+      }),
     ).not.toThrow();
+  });
+
+  it('refuses a plaintext public API URL in production', () => {
+    expect(() =>
+      parseConfig({
+        ...base,
+        NODE_ENV: 'production',
+        PUBLIC_WEB_URL: 'https://app.example.org',
+        PUBLIC_API_URL: 'http://api.example.org',
+        OPENSEND_METRICS_TOKEN: 'metrics-secret',
+      }),
+    ).toThrow(/PUBLIC_API_URL must use https/);
+  });
+
+  it('requires a metrics token in production', () => {
+    expect(() =>
+      parseConfig({
+        ...base,
+        NODE_ENV: 'production',
+        PUBLIC_WEB_URL: 'https://app.example.org',
+        PUBLIC_API_URL: 'https://api.example.org',
+      }),
+    ).toThrow(/OPENSEND_METRICS_TOKEN/);
   });
 });

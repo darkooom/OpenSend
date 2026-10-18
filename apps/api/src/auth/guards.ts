@@ -19,6 +19,7 @@ export interface SessionUser {
   email: string;
   name: string;
   platformRole: 'admin' | null;
+  emailVerified: boolean;
 }
 
 export interface ApiKeyContext {
@@ -47,6 +48,7 @@ export class SessionGuard implements CanActivate {
       email: u.email,
       name: u.name,
       platformRole: u.platformRole === 'admin' ? 'admin' : null,
+      emailVerified: Boolean(u.emailVerified),
     };
     return true;
   }

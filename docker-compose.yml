@@ -31,8 +31,11 @@ services:
       retries: 20
 
   minio:
-    # RELEASE.2025-09-07T16-13-09Z, pinned by digest (MinIO no longer publishes newer community images).
-    image: quay.io/minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    # Community MinIO 2025.7.23, mirrored by Bitnami Legacy and pinned by digest.
+    # The former quay.io/minio/minio image now returns 401 to anonymous CI pulls.
+    image: bitnamilegacy/minio@sha256:8935e75fa5d11295c17171e4aa49efe390a1193cd7f12e4d21b92af9ffef09d7
+    # Keep compatibility with volumes created by the former upstream image (UID 0).
+    user: '0:0'
     command: ['server', '/data', '--console-address', ':9001']
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-opensend-local}

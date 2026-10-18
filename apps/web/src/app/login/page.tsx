@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { AuthCard, Field, FormError } from '@/components/auth-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,11 @@ export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('reset'))
+      setNotice('Your password was changed. Sign in with the new one.');
+  }, []);
   return (
     <AuthCard
       title="Sign in"
@@ -49,10 +55,21 @@ export default function LoginPage() {
             required
           />
         </Field>
+        {notice && (
+          <p
+            role="status"
+            className="rounded-md border border-success/30 bg-success-soft px-3 py-2 text-success"
+          >
+            {notice}
+          </p>
+        )}
         <FormError message={error} />
         <Button type="submit" disabled={busy}>
           {busy ? 'Signing in…' : 'Sign in'}
         </Button>
+        <Link href="/forgot-password" className="text-muted-foreground hover:text-foreground">
+          Forgot your password?
+        </Link>
       </form>
     </AuthCard>
   );

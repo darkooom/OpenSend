@@ -14,6 +14,7 @@ export const usageResponseSchema = z.object({
     maxBatchSize: z.number(),
     maxPendingPerEnvironment: z.number(),
     rateLimitPerMinute: z.number(),
+    projectRateLimitPerMinute: z.number(),
   }),
 });
 export type UsageResponse = z.infer<typeof usageResponseSchema>;

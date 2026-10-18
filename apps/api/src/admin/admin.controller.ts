@@ -102,6 +102,26 @@ export class AdminController {
     return this.setProjectPause(u, id, false, null, ip);
   }
 
+  @Get('connections')
+  async connections(@CurrentUser() u: SessionUser) {
+    this.access.requirePlatformAdmin(u);
+    return this.db
+      .select({
+        id: providerConnections.id,
+        name: providerConnections.name,
+        type: providerConnections.type,
+        enabled: providerConnections.enabled,
+        pausedAt: providerConnections.pausedAt,
+        pausedReason: providerConnections.pausedReason,
+        project: projects.name,
+        organization: organizations.name,
+      })
+      .from(providerConnections)
+      .innerJoin(projects, eq(projects.id, providerConnections.projectId))
+      .innerJoin(organizations, eq(organizations.id, projects.organizationId))
+      .orderBy(organizations.name, projects.name, providerConnections.name);
+  }
+
   @Post('connections/:id/pause')
   @HttpCode(200)
   async pauseConnection(

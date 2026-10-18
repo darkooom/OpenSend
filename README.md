@@ -9,7 +9,7 @@
   <a href="https://nextjs.org/"><img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white"></a>
   <a href="https://www.typescriptlang.org/"><img alt="TypeScript 6" src="https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white"></a>
   <a href="https://www.postgresql.org/"><img alt="PostgreSQL 18" src="https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white"></a>
-  <a href="#license"><img alt="License: not chosen yet" src="https://img.shields.io/badge/License-not%20chosen%20yet-6B6A63.svg"></a>
+  <a href="#license"><img alt="License: AGPL-3.0 (SDK: MIT)" src="https://img.shields.io/badge/License-AGPL--3.0%20%C2%B7%20SDK%20MIT-0E6B5C.svg"></a>
 </p>
 
 <p align="center">
@@ -20,6 +20,8 @@
   <a href="docs/SELF_HOSTING.md"><b>Self-hosting</b></a>
   &nbsp;·&nbsp;
   <a href="docs/ARCHITECTURE.md"><b>Architecture</b></a>
+  &nbsp;·&nbsp;
+  <a href="CONTRIBUTING.md"><b>Contributing</b></a>
 </p>
 
 <br>
@@ -37,8 +39,8 @@ Nothing calls home, nothing is locked behind a license key.
   <img src="docs/readme/tour.webp" alt="A tour through OpenSend: overview, emails, email detail with sandboxed preview, templates, domains, webhooks, members and audit log" width="100%">
 </p>
 
-> **Status: pre-release.** The full local flow works and is covered by tests, but there is no
-> license yet and the Amazon SES adapter has not been verified against a real account. See
+> **Status: pre-release.** The full local flow works and is covered by tests, but the Amazon
+> SES adapter has not been verified against a real account yet. See
 > [Implementation status](docs/IMPLEMENTATION_STATUS.md).
 
 ## Quick start
@@ -49,7 +51,7 @@ Requirements: Node.js 24, Docker, and pnpm through Corepack.
 git clone https://github.com/darkooom/OpenSend.git
 cd OpenSend
 corepack enable
-pnpm install
+pnpm install --frozen-lockfile
 pnpm setup:local      # writes .env with random local secrets
 pnpm services:up      # PostgreSQL, Redis, MinIO, Mailpit
 pnpm build && pnpm db:migrate
@@ -264,7 +266,7 @@ OpenAPI spec is served at `GET /v1/openapi.json`.
 - [ ] Generate `BETTER_AUTH_SECRET` and `OPENSEND_ENCRYPTION_KEYS`, and store them outside your database backups
 - [ ] Provide PostgreSQL, Redis (AOF, `noeviction`) and a private S3 bucket
 - [ ] Connect an SMTP relay or Amazon SES and verify your sender domains
-- [ ] Put API and dashboard behind TLS and protect `/metrics` with `OPENSEND_METRICS_TOKEN`
+- [ ] Put API and dashboard behind TLS and set the production-required `OPENSEND_METRICS_TOKEN`
 - [ ] Set up backups, monitoring and alerts as described in [docs/OPERATIONS.md](docs/OPERATIONS.md)
 
 Docker images for API, worker and dashboard: `docker compose --profile app up -d --build`.
@@ -307,12 +309,40 @@ e2e/                    Playwright: fresh install → Mailpit → dashboard
 
 ## Security
 
-Please do not report vulnerabilities in public issues. The security model, including the
-permission matrix, encryption, SSRF protection and webhook signing, is described in
-[docs/SECURITY.md](docs/SECURITY.md).
+Please do not report vulnerabilities in public issues. Follow the private process in
+[SECURITY.md](SECURITY.md). The implementation's permission matrix, encryption, SSRF protection
+and webhook signing are described in [docs/SECURITY.md](docs/SECURITY.md).
+
+## Contributing
+
+Bug reports, focused pull requests and design discussions are welcome. Start with
+[CONTRIBUTING.md](CONTRIBUTING.md), follow the [Code of Conduct](CODE_OF_CONDUCT.md), and use
+fictional/redacted data in every issue, test and example.
+
+## Project status
+
+OpenSend is preparing its first public beta. Local Mailpit flows have automated unit, integration
+and browser coverage; Amazon SES, a real authenticated TLS relay, production DNS, sustained load
+and disaster recovery still require external verification. See the evidence and blockers in
+[Implementation status](docs/IMPLEMENTATION_STATUS.md) and
+[Launch readiness](docs/LAUNCH_READINESS.md).
+
+## Roadmap
+
+The release-focused roadmap is maintained in [docs/ROADMAP.md](docs/ROADMAP.md). Near-term work
+prioritizes provider verification, operational drills, performance evidence and beta feedback over
+expanding the feature surface.
 
 ## License
 
-**Not chosen yet.** Until a license is added, no rights to use or redistribute this code are
-granted. OpenSend is an independent project and does not claim API compatibility with any
-other email service.
+OpenSend is open source under the [GNU Affero General Public License v3.0](LICENSE)
+(`AGPL-3.0-only`). You can use, self-host, modify and run it for your own customers. If you
+offer a **modified** version to others over a network, you have to make that source code
+available to them under the same license.
+
+The client libraries [`@opensend/sdk`](packages/sdk) and [`@opensend/contracts`](packages/contracts)
+are licensed under the [MIT License](packages/sdk/LICENSE), so you can embed them in your own
+applications under any license.
+
+OpenSend is an independent project and does not claim API compatibility with any other email
+service.

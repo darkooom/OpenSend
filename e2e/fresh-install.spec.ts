@@ -66,7 +66,9 @@ test('fresh install to message in Mailpit, end to end', async ({ page, request }
   await page.getByRole('button', { name: 'Save as default connection' }).click();
   await expect(page.getByRole('heading', { name: 'Mailpit', level: 3 })).toBeVisible();
   await page.getByRole('button', { name: 'Test connection' }).click();
-  await expect(page.getByRole('status')).toContainText('succeeded');
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Connection and authentication succeeded' }),
+  ).toBeVisible();
 
   // 4. Domain (reserved local-only test domain).
   await page.goto(`${envUrl}/domains`);

@@ -9,3 +9,4 @@ export const LOGGER = Symbol('LOGGER');
 export const AUTH = Symbol('AUTH');
 export const DNS_RESOLVER = Symbol('DNS_RESOLVER');
 export const PROVIDER_FACTORY = Symbol('PROVIDER_FACTORY');
+export const PLATFORM_MAILER = Symbol('PLATFORM_MAILER');

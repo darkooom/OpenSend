@@ -82,6 +82,12 @@ export const configSchema = z.object({
   OPENSEND_MAX_PENDING_PER_ENVIRONMENT: int(10000, 1),
   OPENSEND_DEFAULT_MONTHLY_QUOTA: int(10000, 0),
   OPENSEND_RATE_LIMIT_PER_MINUTE: int(600, 1),
+  /** Emails per minute per project across all keys and environments (sliding window). */
+  OPENSEND_RATE_LIMIT_PER_PROJECT_PER_MINUTE: int(3000, 1),
+  /** Signed SES/SNS webhook requests per minute per connection and source address. */
+  OPENSEND_SES_WEBHOOK_RATE_LIMIT_PER_MINUTE: int(120, 1),
+  /** Dashboard actions that create webhook deliveries, per user and project. */
+  OPENSEND_WEBHOOK_ACTION_RATE_LIMIT_PER_MINUTE: int(30, 1),
 
   OPENSEND_IDEMPOTENCY_TTL_HOURS: int(24, 1),
   OPENSEND_MAX_SEND_ATTEMPTS: int(5, 1),
@@ -90,6 +96,18 @@ export const configSchema = z.object({
   OPENSEND_WEBHOOK_TIMEOUT_MS: int(10000, 500),
   OPENSEND_MAX_WEBHOOK_ATTEMPTS: int(8, 1),
   OPENSEND_INVITATION_TTL_HOURS: int(72, 1),
+
+  /**
+   * Platform sender for account emails (invitations, password reset, email verification).
+   * Operator configuration, separate from tenant provider connections. Leave the host empty
+   * to disable account emails (invitation links must then be shared manually).
+   */
+  OPENSEND_PLATFORM_SMTP_HOST: z.string().optional(),
+  OPENSEND_PLATFORM_SMTP_PORT: int(587, 1),
+  OPENSEND_PLATFORM_SMTP_SECURITY: z.enum(['starttls', 'tls', 'none']).default('starttls'),
+  OPENSEND_PLATFORM_SMTP_USERNAME: z.string().optional(),
+  OPENSEND_PLATFORM_SMTP_PASSWORD: z.string().optional(),
+  OPENSEND_PLATFORM_FROM: z.string().default('OpenSend <no-reply@opensend.localhost>'),
 
   /** Bearer token required for GET /metrics. Leave empty only if /metrics is not publicly reachable. */
   OPENSEND_METRICS_TOKEN: z.string().optional(),
@@ -142,8 +160,19 @@ export function assertProductionSafety(config: AppConfig): void {
   if (config.OPENSEND_WEBHOOK_ALLOW_HTTP) {
     problems.push('OPENSEND_WEBHOOK_ALLOW_HTTP must be false in production');
   }
+  if (config.OPENSEND_PLATFORM_SMTP_HOST && config.OPENSEND_PLATFORM_SMTP_SECURITY === 'none') {
+    problems.push(
+      'OPENSEND_PLATFORM_SMTP_SECURITY=none (plaintext SMTP) is not allowed in production',
+    );
+  }
   if (!config.PUBLIC_WEB_URL.startsWith('https://')) {
     problems.push('PUBLIC_WEB_URL must use https:// in production');
+  }
+  if (!config.PUBLIC_API_URL.startsWith('https://')) {
+    problems.push('PUBLIC_API_URL must use https:// in production');
+  }
+  if (!config.OPENSEND_METRICS_TOKEN) {
+    problems.push('OPENSEND_METRICS_TOKEN is required in production');
   }
   if (problems.length > 0) {
     throw new ConfigError(`Refusing to start in production: ${problems.join('; ')}`);

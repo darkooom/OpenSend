@@ -5,12 +5,12 @@ exist in the product as buttons or stubs.
 
 ## Before a first public release
 
-- Choose and add a license (release blocker).
+- Decide contribution terms (DCO vs. CLA); the contribution workflow itself is documented.
 - Real-account verification of the SES adapter and SNS ingestion; a TLS-enabled SMTP relay test.
 - Load test of acceptance and dispatch throughput; tune the per-acceptance backlog count.
-- Password reset and email verification for dashboard users (needs a platform sender), session
-  management UI.
-- Periodic re-verification of domain ownership.
+- Session management UI (password reset and email verification already work with a platform
+  sender).
+- Production-scale validation of the periodic domain-ownership recheck.
 
 ## Managed service
 

@@ -136,6 +136,19 @@ describe('templates', () => {
       TemplateError,
     );
   });
+  it('rejects expansion-heavy templates before rendering oversized output', () => {
+    const repeated = '{{name}}'.repeat(20_000);
+    expect(() =>
+      renderTemplate(
+        { subject: 'ok', text: repeated },
+        { name: 'x'.repeat(1000) },
+        { maxSubjectBytes: 998, maxBodyBytes: 2 * 1024 * 1024 },
+      ),
+    ).toThrow(/too large/);
+  });
+  it('rejects oversized individual variable values', () => {
+    expect(() => resolveValues(vars, { name: 'x'.repeat(10_001) }, 'send')).toThrow(/too large/);
+  });
 });
 
 describe('webhook signatures', () => {

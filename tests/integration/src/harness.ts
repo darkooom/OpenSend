@@ -116,6 +116,7 @@ export function testConfig(overrides: Record<string, string> = {}): AppConfig {
     OPENSEND_WEBHOOK_ALLOW_HTTP: 'true',
     OPENSEND_PRIVATE_NETWORK_ALLOWLIST: '',
     OPENSEND_RATE_LIMIT_PER_MINUTE: '100000',
+    OPENSEND_RATE_LIMIT_PER_PROJECT_PER_MINUTE: '100000',
     ...overrides,
   });
 }

@@ -93,7 +93,8 @@ export function createGuardedLookup(
         );
       }
       if (opts.all) return cb(null, list);
-      const first = list[0]!;
+      // Single address: prefer IPv4 (dual-stack names often publish services on IPv4 only).
+      const first = list.find((a) => a.family === 4) ?? list[0]!;
       return cb(null, first.address, first.family);
     });
   }) as LookupFunction;

@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  Inject,
   Param,
   Patch,
   Post,
@@ -11,6 +12,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import type { AppConfig } from '@opensend/config';
 import type { Permission } from '@opensend/contracts';
 import type { Response } from 'express';
 import { AccessService } from '../access/access.service';
@@ -21,10 +23,13 @@ import { AcceptanceService } from '../emails/acceptance.service';
 import { EmailActionsService } from '../emails/email-actions.service';
 import { EmailQueryService } from '../emails/email-query.service';
 import { ApiKeysService } from '../keys/api-keys.service';
+import { RateLimitService } from '../common/rate-limit.service';
+import { CONFIG } from '../infra/tokens';
 import { SuppressionsService } from '../suppressions/suppressions.service';
 import { TemplatesService } from '../templates/templates.service';
 import { UsageService } from '../usage/usage.service';
 import { WebhooksService } from '../webhooks/webhooks.service';
+import { DeletionService } from './deletion.service';
 import { ProjectsService } from './projects.service';
 
 /**
@@ -47,6 +52,9 @@ export class DashboardController {
     private readonly actions: EmailActionsService,
     private readonly acceptance: AcceptanceService,
     private readonly usage: UsageService,
+    private readonly deletion: DeletionService,
+    private readonly rateLimit: RateLimitService,
+    @Inject(CONFIG) private readonly config: AppConfig,
   ) {}
 
   private env(u: SessionUser, p: string, e: string, perm: Permission) {
@@ -84,6 +92,52 @@ export class DashboardController {
       await this.access.requireProject(u, p, 'retention.manage'),
       u,
       body,
+    );
+  }
+
+  @Delete('projects/:p')
+  async deleteProject(
+    @CurrentUser() u: SessionUser,
+    @Param('p') p: string,
+    @Query('cancelPending') cancel: string | undefined,
+    @ClientIp() ip: string | null,
+  ) {
+    return this.deletion.deleteProject(
+      await this.access.requireProject(u, p, 'project.manage'),
+      u,
+      cancel === 'true',
+      ip,
+    );
+  }
+
+  @Delete('projects/:p/environments/:e')
+  async deleteEnvironment(
+    @CurrentUser() u: SessionUser,
+    @Param('p') p: string,
+    @Param('e') e: string,
+    @Query('cancelPending') cancel: string | undefined,
+    @ClientIp() ip: string | null,
+  ) {
+    return this.deletion.deleteEnvironment(
+      await this.env(u, p, e, 'environments.manage'),
+      u,
+      cancel === 'true',
+      ip,
+    );
+  }
+
+  @Delete('orgs/:orgId')
+  async deleteOrg(
+    @CurrentUser() u: SessionUser,
+    @Param('orgId') orgId: string,
+    @Query('cancelPending') cancel: string | undefined,
+    @ClientIp() ip: string | null,
+  ) {
+    return this.deletion.deleteOrganization(
+      await this.access.requireOrg(u, orgId, 'org.manage'),
+      u,
+      cancel === 'true',
+      ip,
     );
   }
 
@@ -494,7 +548,18 @@ export class DashboardController {
     @Param('e') e: string,
     @Param('id') id: string,
   ) {
-    return this.webhooks.test(await this.env(u, p, e, 'webhooks.manage'), id);
+    const access = await this.env(u, p, e, 'webhooks.manage');
+    await this.rateLimit.enforceAll([
+      {
+        bucket: `webhook-action-user:${u.id}`,
+        limit: this.config.OPENSEND_WEBHOOK_ACTION_RATE_LIMIT_PER_MINUTE,
+      },
+      {
+        bucket: `webhook-action-project:${access.project.id}`,
+        limit: this.config.OPENSEND_WEBHOOK_ACTION_RATE_LIMIT_PER_MINUTE,
+      },
+    ]);
+    return this.webhooks.test(access, id);
   }
 
   @Get('projects/:p/environments/:e/webhooks/:id/deliveries')
@@ -531,7 +596,18 @@ export class DashboardController {
     @Param('e') e: string,
     @Param('deliveryId') id: string,
   ) {
-    return this.webhooks.replay(await this.env(u, p, e, 'webhooks.manage'), u, id);
+    const access = await this.env(u, p, e, 'webhooks.manage');
+    await this.rateLimit.enforceAll([
+      {
+        bucket: `webhook-action-user:${u.id}`,
+        limit: this.config.OPENSEND_WEBHOOK_ACTION_RATE_LIMIT_PER_MINUTE,
+      },
+      {
+        bucket: `webhook-action-project:${access.project.id}`,
+        limit: this.config.OPENSEND_WEBHOOK_ACTION_RATE_LIMIT_PER_MINUTE,
+      },
+    ]);
+    return this.webhooks.replay(access, u, id);
   }
 
   @Delete('projects/:p/environments/:e/webhooks/:id')

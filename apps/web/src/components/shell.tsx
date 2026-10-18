@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { EnvBadge } from '@/components/status';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,7 +33,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { api, ApiError } from '@/lib/api';
-import { useMe, useOrg, useProject } from '@/lib/hooks';
+import { useApi, useMe, useOrg, useProject } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
 function NavLink({
@@ -61,6 +61,46 @@ function NavLink({
       <Icon className="size-4 shrink-0" />
       {children}
     </Link>
+  );
+}
+
+function VerifyEmailBanner({ email }: { email: string }) {
+  const status = useApi<{ accountEmails: boolean }>('/setup/status');
+  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  if (!status.data?.accountEmails) return null;
+  return (
+    <div
+      role="status"
+      className="flex flex-wrap items-center gap-3 border-b border-warning/25 bg-warning-soft px-6 py-2 text-warning"
+    >
+      <span>
+        Confirm your email address <span className="font-mono">{email}</span> so password reset can
+        reach you.
+      </span>
+      {state === 'sent' ? (
+        <span>Link sent. Check your inbox.</span>
+      ) : (
+        <button
+          type="button"
+          className="font-medium underline disabled:opacity-60"
+          disabled={state === 'sending'}
+          onClick={async () => {
+            setState('sending');
+            try {
+              await api('/auth/send-verification-email', {
+                method: 'POST',
+                body: { email, callbackURL: `${location.origin}/` },
+              });
+              setState('sent');
+            } catch {
+              setState('error');
+            }
+          }}
+        >
+          {state === 'error' ? 'Sending failed, try again' : 'Send confirmation link'}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -269,6 +309,7 @@ export function Shell({ children }: { children: ReactNode }) {
             )}
           </header>
         )}
+        {!me.data.user.emailVerified && <VerifyEmailBanner email={me.data.user.email} />}
         <main className="mx-auto max-w-[1200px] px-6 py-8">{children}</main>
       </div>
     </div>

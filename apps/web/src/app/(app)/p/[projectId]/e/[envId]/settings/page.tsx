@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Field, FormError } from '@/components/auth-card';
 import { ErrorState, LoadingRows, PageHeader, Section } from '@/components/states';
+import { DeleteScope } from '@/components/danger-zone';
 import { EnvBadge } from '@/components/status';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -213,6 +214,34 @@ export default function SettingsPage() {
           </a>
         </Button>
       </Section>
+
+      {['owner', 'admin'].includes(p.role ?? '') && (
+        <Section
+          title="Danger zone"
+          description="Deletes data, attachment objects and keys. Emails being handed off right now block deletion."
+        >
+          <div className="rounded-md border border-destructive/30 bg-card">
+            {env && p.environments.length > 1 && (
+              <DeleteScope
+                label="Delete this environment"
+                name={env.name}
+                path={`/projects/${projectId}/environments/${envId}`}
+                consequences={`Removes the ${env.name} environment with its emails, domains, keys, providers, templates and webhooks.`}
+                onDeleted={() =>
+                  (location.href = `/p/${projectId}/e/${p.environments.find((e) => e.id !== envId)!.id}`)
+                }
+              />
+            )}
+            <DeleteScope
+              label="Delete this project"
+              name={p.name}
+              path={`/projects/${projectId}`}
+              consequences="Removes every environment of this project with all its data and attachments."
+              onDeleted={() => (location.href = `/orgs/${p.organizationId}`)}
+            />
+          </div>
+        </Section>
+      )}
     </>
   );
 }

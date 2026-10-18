@@ -160,6 +160,12 @@ function DomainCard({ d, base }: { d: DomainResource; base: string }) {
               </span>
             </div>
             <RecordsTable records={[d.ownership.record]} />
+            {d.ownership.missingSince && (
+              <p role="alert" className="mt-1 text-destructive">
+                {d.ownership.lastError ?? 'The ownership record is no longer found.'} Publish the
+                TXT record again to keep sending.
+              </p>
+            )}
             {d.ownership.lastError && d.ownership.status !== 'verified' && (
               <p className="mt-1 text-warning">{d.ownership.lastError}</p>
             )}
