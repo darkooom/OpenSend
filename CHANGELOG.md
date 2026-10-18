@@ -7,6 +7,8 @@ public API and deployment model are still stabilizing.
 
 ## [Unreleased]
 
+## [0.1.0-beta.1] - 2026-10-18
+
 ### Added
 
 - Account email infrastructure, password reset, account-email verification, project deletion,
@@ -28,6 +30,4 @@ public API and deployment model are still stabilizing.
   limits for webhook test/replay work.
 - Production configuration now rejects a plaintext public API URL.
 
-## [0.1.0-beta.1] - Unreleased
-
-First planned public beta. See [docs/releases/v0.1.0-beta.1.md](docs/releases/v0.1.0-beta.1.md).
+First public beta. See [docs/releases/v0.1.0-beta.1.md](docs/releases/v0.1.0-beta.1.md).

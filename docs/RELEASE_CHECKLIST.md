@@ -22,7 +22,7 @@ Target candidate: `v0.1.0-beta.1`. Classifications mean:
       self-signed SNS fixture keys were flagged in history.
 - [x] Local Markdown links resolve.
 - [x] Production dependency licenses were inventoried; no unknown license was reported.
-- [x] Repository remains private during preparation.
+- [x] Repository remained private during preparation and was made public at the owner's direction.
 - [x] Issues and Discussions are enabled; unused Wiki and Projects features are disabled.
 
 ## NEEDS ATTENTION
@@ -37,27 +37,29 @@ Target candidate: `v0.1.0-beta.1`. Classifications mean:
 - [ ] Confirm the old encryption key remains available until rotation reports zero failures and a
       restore drill passes.
 
-## BLOCKED
+## PUBLICATION COMPLETION
 
-- [ ] Owner confirms the platform and SDK/contracts license split.
+- [x] Owner confirms the AGPL-3.0-only platform and MIT SDK/contracts license split.
 - [ ] Launch branch is pushed and its GitHub Actions run is green.
-- [ ] Pull-request review confirms no secrets, local `.env`, test output, or generated build output
+- [ ] Final pull-request review confirms no secrets, local `.env`, test output, or generated build output
       is included.
-- [ ] Branch protection/ruleset is active for `main` with pull requests plus required `check` and
+- [x] Branch protection/ruleset is active for `main` with pull requests plus required `check` and
       `docker` status checks.
-- [ ] Description and topics are saved and reviewed for accuracy.
-- [ ] Private vulnerability reporting and supported no-cost security features are enabled where
+- [x] Description and topics are saved and reviewed for accuracy.
+- [x] Dependency Graph, Dependabot alerts, malware alerts, and security updates are enabled.
+- [x] Private vulnerability reporting is enabled.
+- [x] Supported no-cost security features are enabled where
       the plan permits.
-- [ ] Social preview is uploaded from [`social-preview.png`](social-preview.png).
-- [ ] Default branch and merge policy are reviewed after the launch pull request exists.
+- [x] Social preview is uploaded from [`social-preview.png`](social-preview.png).
+- [x] Default branch and merge policy are reviewed.
 
-- [ ] Choose the public launch date and repository visibility.
-- [ ] Confirm `v0.1.0-beta.1` as the exact version and tag.
-- [ ] Review [draft release notes](releases/v0.1.0-beta.1.md) and
+- [x] Choose the public launch date and repository visibility.
+- [x] Confirm `v0.1.0-beta.1` as the exact version and tag.
+- [x] Review [release notes](releases/v0.1.0-beta.1.md) and
       [launch announcement](LAUNCH_ANNOUNCEMENT.md).
 - [ ] Create the signed/annotated tag from the reviewed merge commit.
 - [ ] Publish the GitHub release only after the tag, release notes, and artifacts are verified.
-- [ ] Change repository visibility only when the owner explicitly authorizes it.
+- [x] Change repository visibility only when the owner explicitly authorizes it.
 - [ ] Post announcements only after the public repository and release URLs work from a logged-out
       browser.
 

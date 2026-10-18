@@ -39,7 +39,7 @@ Nothing calls home, nothing is locked behind a license key.
   <img src="docs/readme/tour.webp" alt="A tour through OpenSend: overview, emails, email detail with sandboxed preview, templates, domains, webhooks, members and audit log" width="100%">
 </p>
 
-> **Status: pre-release.** The full local flow works and is covered by tests, but the Amazon
+> **Status: public beta.** The full local flow works and is covered by tests, but the Amazon
 > SES adapter has not been verified against a real account yet. See
 > [Implementation status](docs/IMPLEMENTATION_STATUS.md).
 
@@ -321,7 +321,7 @@ fictional/redacted data in every issue, test and example.
 
 ## Project status
 
-OpenSend is preparing its first public beta. Local Mailpit flows have automated unit, integration
+OpenSend is in public beta. Local Mailpit flows have automated unit, integration
 and browser coverage; Amazon SES, a real authenticated TLS relay, production DNS, sustained load
 and disaster recovery still require external verification. See the evidence and blockers in
 [Implementation status](docs/IMPLEMENTATION_STATUS.md) and

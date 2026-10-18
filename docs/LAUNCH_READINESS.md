@@ -6,12 +6,13 @@ topology has been exercised.
 
 ## Executive summary
 
-OpenSend is ready for a **private beta / release-candidate review**. The local installation,
+OpenSend is ready for a **public beta**. The local installation,
 dashboard setup, provider connection, domain, API key, API send, worker processing, Mailpit
-delivery, and dashboard status flow all pass end to end. The repository remains private and no
-release or tag has been published.
+delivery, and dashboard status flow all pass end to end. The repository is public, the licensing
+split is recorded, and publication safeguards are active.
 
-Public-beta publication remains blocked on the owner decisions and external checks listed below.
+The remaining external checks below are accepted beta limitations, not claims of production
+verification.
 
 ## Changes made
 
@@ -25,15 +26,14 @@ Public-beta publication remains blocked on the owner decisions and external chec
 
 ## GitHub settings configured
 
-- Repository visibility remains **private** and the default branch remains `main`.
+- Repository visibility is **public** and the default branch remains `main`.
 - Issues and Discussions are enabled.
 - Unused Wiki and Projects features are disabled.
 - GitHub Actions is active (the existing workflow runs are visible).
-- A `main` ruleset is prepared with pull-request, required `check`/`docker` statuses, force-push
-  blocking, and deletion blocking. Saving it is pending the owner's confirmation because it
-  changes repository access controls.
-- Description, topics, security toggles, private vulnerability reporting, and social-preview
-  upload remain explicit GitHub-side actions; see the checklist.
+- An active `main` ruleset requires pull requests and the `check`/`docker` statuses while blocking
+  force pushes and deletions.
+- Description and topics are published. Dependency Graph, Dependabot alerts, malware alerts, and
+  Dependabot security updates are enabled.
 
 ## README improvements
 
@@ -62,7 +62,7 @@ Public-beta publication remains blocked on the owner decisions and external chec
 | Security review                                 | pass after remediation | repository-wide Codex Security review; 3 high and 4 medium scan-start findings fixed and regression-tested         |
 | Secret scan                                     | pass with fixtures     | Gitleaks found only two documented self-signed SNS fixture keys in history and no additional prepared-tree finding |
 | README media                                    | pass                   | local, repository-owned WebP assets; reproducible screenshot script present                                        |
-| Social preview asset                            | prepared               | [`social-preview.png`](social-preview.png), 1280×640, derived from the real product hero                           |
+| Social preview asset                            | published              | [`social-preview.png`](social-preview.png), 1280×640, derived from the real product hero                           |
 
 The canonical security report is stored outside the repository at:
 
@@ -110,19 +110,14 @@ The canonical security report is stored outside the repository at:
 - The previous CI failure was an anonymous pull failure for the retired Quay MinIO image. Compose
   now uses a digest-pinned compatible image that was started and health-checked locally.
 
-## Remaining publication blockers
+## Remaining beta verification work
 
-1. **License owner decision.** The working tree contains the recommended AGPL-3.0-only platform
-   plus MIT SDK/contracts split, but it must not be merged as a final licensing decision without
-   explicit owner confirmation. See [LICENSING_DECISION.md](LICENSING_DECISION.md).
-2. **Real Amazon SES verification.** The adapter and signed SNS processing are test-verified, not
+1. **Real Amazon SES verification.** The adapter and signed SNS processing are test-verified, not
    exercised against a real AWS account.
-3. **Real production SMTP verification.** Local Mailpit and TLS behavior are tested; an external
+2. **Real production SMTP verification.** Local Mailpit and TLS behavior are tested; an external
    authenticated relay has not been exercised.
-4. **GitHub CI on the launch branch.** Local CI-equivalent checks pass; the new remote run must be
-   green before merge.
-5. **Repository publication decision.** The repository must remain private until the owner chooses
-   a visibility and release date. Do not publish a GitHub release yet.
+3. **Operational evidence.** Sustained load and a production-like backup/restore drill remain to
+   be recorded before making broader production-readiness claims.
 
 ## Known limitations accepted for beta
 
@@ -139,15 +134,11 @@ The canonical security report is stored outside the repository at:
 
 ## Remaining manual actions
 
-- Confirm the license split and contribution terms.
-- Save and verify the prepared GitHub metadata, security settings, ruleset, and social preview.
-- Push the preparation branch, open the private review pull request, and require its remote CI run.
+- Monitor Dependabot, private vulnerability reports, and beta feedback after publication.
 - Complete the real SES, authenticated SMTP, load, and restore drills before claiming broader
   production readiness.
 
 ## Recommendation
 
-Merge only after the launch branch CI is green and the licensing decision is explicit. Treat the
-first tag as `v0.1.0-beta.1`, keep the repository private through the final checklist, and publish
-only after real SES/SMTP smoke tests or after clearly documenting that those provider paths remain
-beta limitations.
+Publish `v0.1.0-beta.1` only from a green, reviewed commit. Keep the real SES/SMTP, load, and
+restore gaps visible as beta limitations until direct evidence replaces them.
