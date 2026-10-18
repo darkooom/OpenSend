@@ -47,10 +47,10 @@ Target candidate: `v0.1.0-beta.1`. Classifications mean:
       `docker` status checks.
 - [x] Description and topics are saved and reviewed for accuracy.
 - [x] Dependency Graph, Dependabot alerts, malware alerts, and security updates are enabled.
-- [ ] Private vulnerability reporting is enabled if GitHub exposes it for this repository.
+- [x] Private vulnerability reporting is enabled.
 - [x] Supported no-cost security features are enabled where
       the plan permits.
-- [ ] Social preview is uploaded from [`social-preview.png`](social-preview.png).
+- [x] Social preview is uploaded from [`social-preview.png`](social-preview.png).
 - [x] Default branch and merge policy are reviewed.
 
 - [x] Choose the public launch date and repository visibility.
