@@ -20,7 +20,7 @@
     "@opensend/contracts": "workspace:*",
     "@opensend/core": "workspace:*",
     "nodemailer": "10.1.2",
-    "undici": "8.12.2",
+    "undici": "8.12.3",
     "zod": "4.6.7"
   },
   "devDependencies": {
