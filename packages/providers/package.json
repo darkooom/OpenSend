@@ -19,7 +19,7 @@
     "@aws-sdk/client-sesv2": "3.1152.0",
     "@opensend/contracts": "workspace:*",
     "@opensend/core": "workspace:*",
-    "nodemailer": "10.1.2",
+    "nodemailer": "10.1.4",
     "undici": "8.12.2",
     "zod": "4.6.7"
   },
